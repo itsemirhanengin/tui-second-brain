@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
 import { consumePendingAction } from "../../../utils/pendingAction"
+import { setGlobalInputFocus } from "../../../utils/inputFocus"
 import { ProgressBar } from "../../../components/shared/ProgressBar"
 import { EmptyState } from "../../../components/shared/EmptyState"
 import {
@@ -27,7 +28,8 @@ export function WaterTracker() {
   const [customAmount, setCustomAmount] = useState("")
   const [goalInput, setGoalInput] = useState(String(goal))
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [inputFocused, setInputFocused] = useState(false)
+  const [inputFocused, _setInputFocused] = useState(false)
+  const setInputFocused = (v: boolean) => { _setInputFocused(v); setGlobalInputFocus(v) }
 
   const refresh = useCallback(() => {
     setEntries(getTodayEntries())
@@ -174,12 +176,26 @@ export function WaterTracker() {
   }
 
   if (view === "history") {
+    const weeklyAvg = history.length > 0
+      ? Math.round(history.reduce((s, d) => s + d.total, 0) / history.length)
+      : 0
+    const goalsHit = history.filter((d) => d.total >= goal).length
+    const trendDir = history.length >= 2
+      ? (history[0].total > history[history.length - 1].total ? "up" : history[0].total < history[history.length - 1].total ? "down" : "flat")
+      : "flat"
+
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>
         <text fg="#7aa2f7">
           <strong>Water History (Last 14 Days)</strong>
         </text>
-        <box style={{ height: 1 }} />
+
+        <box style={{ flexDirection: "row", gap: 3 }}>
+          <text fg="#565f89">Daily Avg: <span fg="#3498db">{weeklyAvg}ml</span></text>
+          <text fg="#565f89">Goals Hit: <span fg="#16c79a">{goalsHit}/{history.length}</span></text>
+          <text fg="#565f89">Trend: <span fg={trendDir === "up" ? "#16c79a" : trendDir === "down" ? "#e94560" : "#565f89"}>{trendDir === "up" ? "↑" : trendDir === "down" ? "↓" : "─"}</span></text>
+        </box>
+
         {history.length === 0 ? (
           <EmptyState message="No water data yet" hint="Start tracking water on the main view" />
         ) : (

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
 import { consumePendingAction } from "../../utils/pendingAction"
+import { setGlobalInputFocus } from "../../utils/inputFocus"
 import { Badge } from "../../components/shared/Badge"
 import { CurrencyDisplay } from "../../components/shared/CurrencyDisplay"
 import { EmptyState } from "../../components/shared/EmptyState"
@@ -22,6 +23,7 @@ import {
   getProjectBillable,
   getTodayTotalMinutes,
   getWeekTotalMinutes,
+  getDailyWorkMinutes,
   getClientById,
   type Project,
   type Client,
@@ -47,7 +49,8 @@ export function WorkView({ subView }: { subView: string }) {
     setInputFocused(false)
   }, [propView])
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [inputFocused, setInputFocused] = useState(false)
+  const [inputFocused, _setInputFocused] = useState(false)
+  const setInputFocused = (v: boolean) => { _setInputFocused(v); setGlobalInputFocus(v) }
   const [activeProject, setActiveProject] = useState<Project | null>(null)
 
   const projects = getProjects()
@@ -472,6 +475,29 @@ export function WorkView({ subView }: { subView: string }) {
             )
           })}
         </box>
+
+        {(() => {
+          const daily = getDailyWorkMinutes(7)
+          const maxMin = Math.max(...daily.map((d) => d.minutes), 1)
+          if (daily.every((d) => d.minutes === 0)) return null
+          return (
+            <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>
+              <text fg="#565f89">Work Hours (Last 7 Days):</text>
+              {daily.map((d) => {
+                const barW = 20
+                const filled = Math.round((d.minutes / maxMin) * barW)
+                const dayName = new Date(d.date).toLocaleDateString("en-US", { weekday: "short" })
+                return (
+                  <box key={d.date} style={{ flexDirection: "row", gap: 1 }}>
+                    <text fg="#565f89" style={{ width: 5 }}>{dayName}</text>
+                    <text fg="#7aa2f7">{"█".repeat(filled)}{"░".repeat(barW - filled)}</text>
+                    <text fg="#e2e8f0">{formatDuration(d.minutes)}</text>
+                  </box>
+                )
+              })}
+            </box>
+          )
+        })()}
 
         {activeProjects.length > 0 && (
           <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>

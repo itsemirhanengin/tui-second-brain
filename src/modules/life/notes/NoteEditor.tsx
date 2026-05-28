@@ -1,5 +1,6 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useKeyboard, useRenderer } from "@opentui/react"
+import { setGlobalInputFocus } from "../../../utils/inputFocus"
 import type { TextareaRenderable } from "@opentui/core"
 import { updateNote, lockNote, unlockNote, type Note } from "./notesStore"
 import { hashPassword } from "../../../utils/crypto"
@@ -16,6 +17,14 @@ export function NoteEditor({ note, onDone }: NoteEditorProps) {
   const [lockPassword, setLockPassword] = useState("")
   const textareaRef = useRef<TextareaRenderable>(null)
   const renderer = useRenderer()
+
+  useEffect(() => {
+    setGlobalInputFocus(true)
+    if (textareaRef.current && note.content) {
+      textareaRef.current.setText(note.content)
+    }
+    return () => setGlobalInputFocus(false)
+  }, [note.id])
 
   useKeyboard((key) => {
     if (key.ctrl && key.name === "s") {

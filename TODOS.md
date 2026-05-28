@@ -48,45 +48,45 @@
 
 ### Calendar / Agenda View
 
-- [ ] New top-level module or Dashboard section
-- [ ] Unified daily/weekly view: payment due dates, task deadlines, routine schedule
-- [ ] Navigate days with arrow keys
-- [ ] Color-coded by source module (budget=red, routines=purple, work=blue)
+- [x] New top-level module or Dashboard section
+- [x] Unified daily/weekly view: payment due dates, task deadlines, routine schedule
+- [x] Navigate days with arrow keys
+- [x] Color-coded by source module (budget=red, routines=purple, work=blue)
 
 ### Notes Checklist Support
 
-- [ ] Parse `- [ ]` and `- [x]` in markdown content
-- [ ] Render as interactive checkboxes in NoteViewer
-- [ ] Toggle checkboxes with Enter key
-- [ ] Auto-save on toggle
+- [x] Parse `- [ ]` and `- [x]` in markdown content
+- [x] Render as interactive checkboxes in NoteViewer
+- [x] Toggle checkboxes with Enter key
+- [x] Auto-save on toggle
 
 ### Habits Tracker (Life Module)
 
-- [ ] Simple daily yes/no habits separate from routines
-- [ ] GitHub-style contribution heatmap (last 12 weeks)
-- [ ] Weekly/monthly completion percentages
-- [ ] Habit categories and grouping
+- [x] Simple daily yes/no habits separate from routines
+- [x] GitHub-style contribution heatmap (last 12 weeks)
+- [x] Weekly/monthly completion percentages
+- [x] Habit categories and grouping
 
 ### Goals / Objectives (Life Module)
 
-- [ ] Long-term goals with target date and measurable target
-- [ ] Milestones under each goal
-- [ ] Auto-link to budget (savings goals), water (health goals), routines
-- [ ] Progress bar based on linked data or manual updates
+- [x] Long-term goals with target date and measurable target
+- [x] Milestones under each goal
+- [x] Auto-link to budget (savings goals), water (health goals), routines
+- [x] Progress bar based on linked data or manual updates
 
 ### Budget Reports & Trends
 
-- [ ] Month-over-month comparison: "You spent 15% more than last month"
-- [ ] Category trend charts (ASCII bar charts over last 6 months)
-- [ ] Top spending categories ranking
-- [ ] Income vs. expense trend line
+- [x] Month-over-month comparison: "You spent 15% more than last month"
+- [x] Category trend charts (ASCII bar charts over last 6 months)
+- [x] Top spending categories ranking
+- [x] Income vs. expense trend line
 
 ### Data Visualization
 
-- [ ] ASCII pie chart for budget category breakdown
-- [ ] Enhanced water history with weekly averages and trend
-- [ ] Routine completion heatmap (7×N grid, last N weeks)
-- [ ] Work hours weekly bar chart
+- [x] ASCII pie chart for budget category breakdown
+- [x] Enhanced water history with weekly averages and trend
+- [x] Routine completion heatmap (7×N grid, last N weeks)
+- [x] Work hours weekly bar chart
 
 ---
 

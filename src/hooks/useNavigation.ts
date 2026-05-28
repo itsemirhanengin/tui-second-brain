@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react"
 
 export type MainModule = "dashboard" | "life" | "routines" | "work" | "settings"
-export type LifeSubModule = "water" | "notes" | "budget" | "liabilities"
+export type LifeSubModule = "water" | "notes" | "budget" | "liabilities" | "habits" | "goals"
 export type WorkSubModule = "projects" | "clients" | "tasks" | "timetracker" | "workdashboard"
 export type RoutineSubModule = "list" | "stats"
 export type SettingsSubModule = "general" | "water" | "budget" | "export"
@@ -15,7 +15,7 @@ export interface NavigationState {
 }
 
 const SUB_MODULES: Record<string, SubModule[]> = {
-  life: ["water", "notes", "budget", "liabilities"],
+  life: ["water", "notes", "budget", "liabilities", "habits", "goals"],
   routines: ["list", "stats"],
   work: ["workdashboard", "tasks", "timetracker", "projects", "clients"],
   settings: ["general", "water", "export"],

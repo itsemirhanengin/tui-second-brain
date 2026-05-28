@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react"
 import { useKeyboard } from "@opentui/react"
+import { setGlobalInputFocus } from "../../../utils/inputFocus"
 import { Badge } from "../../../components/shared/Badge"
 import { ProgressBar } from "../../../components/shared/ProgressBar"
 import { CurrencyDisplay } from "../../../components/shared/CurrencyDisplay"
@@ -31,7 +32,8 @@ export function LiabilitiesOverview() {
   const currency = getCurrency()
   const [view, setView] = useState<View>("overview")
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [inputFocused, setInputFocused] = useState(false)
+  const [inputFocused, _setInputFocused] = useState(false)
+  const setInputFocused = (v: boolean) => { _setInputFocused(v); setGlobalInputFocus(v) }
   const [tab, setTab] = useState<"cards" | "loans">("cards")
   const [, setDataVer] = useState(0)
   const bump = () => setDataVer((v) => v + 1)

@@ -209,6 +209,39 @@ export interface CategoryBudgetSummary {
   overAmount: number
 }
 
+export function getMonthlyTotals(months: number = 6): { month: number; year: number; income: number; expense: number }[] {
+  const results: { month: number; year: number; income: number; expense: number }[] = []
+  let m = currentMonth()
+  let y = currentYear()
+  for (let i = 0; i < months; i++) {
+    results.unshift({ month: m, year: y, income: getMonthlyIncome(m, y), expense: getMonthlyExpense(m, y) })
+    m--
+    if (m === 0) { m = 12; y-- }
+  }
+  return results
+}
+
+export function getCategoryTrend(categoryId: number, months: number = 6): { month: number; year: number; spent: number }[] {
+  const results: { month: number; year: number; spent: number }[] = []
+  let m = currentMonth()
+  let y = currentYear()
+  for (let i = 0; i < months; i++) {
+    results.unshift({ month: m, year: y, spent: getCategorySpending(categoryId, m, y) })
+    m--
+    if (m === 0) { m = 12; y-- }
+  }
+  return results
+}
+
+export function getTopCategories(month: number = currentMonth(), year: number = currentYear(), limit = 5): { category: Category; spent: number }[] {
+  const cats = getCategories("expense")
+  const ranked = cats
+    .map((cat) => ({ category: cat, spent: getCategorySpending(cat.id, month, year) }))
+    .filter((c) => c.spent > 0)
+    .sort((a, b) => b.spent - a.spent)
+  return ranked.slice(0, limit)
+}
+
 export function getCategoryBudgetSummaries(month: number = currentMonth(), year: number = currentYear()): CategoryBudgetSummary[] {
   const categories = getCategories("expense")
   return categories.map((cat) => {

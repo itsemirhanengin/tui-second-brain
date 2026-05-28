@@ -225,6 +225,44 @@ const MIGRATIONS: string[] = [
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
   )`,
 
+  `CREATE TABLE IF NOT EXISTS habits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT '',
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS habit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    habit_id INTEGER NOT NULL,
+    date TEXT NOT NULL DEFAULT (date('now')),
+    UNIQUE(habit_id, date),
+    FOREIGN KEY (habit_id) REFERENCES habits(id) ON DELETE CASCADE
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS goals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    target_date TEXT,
+    target_value REAL,
+    current_value REAL NOT NULL DEFAULT 0,
+    unit TEXT NOT NULL DEFAULT '',
+    linked_module TEXT,
+    is_completed INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS milestones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    goal_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    is_completed INTEGER NOT NULL DEFAULT 0,
+    completed_at TEXT,
+    FOREIGN KEY (goal_id) REFERENCES goals(id) ON DELETE CASCADE
+  )`,
+
   `CREATE TABLE IF NOT EXISTS pomodoro_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     task_id INTEGER,

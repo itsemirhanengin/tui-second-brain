@@ -125,3 +125,27 @@ export function getCompletionRate(routineId: number, days: number = 30): number 
   if (row.total === 0) return 0
   return Math.round((row.completed / row.total) * 100)
 }
+
+export function getWeeklyCompletionGrid(weeks = 8): { grid: number[][]; dates: string[] } {
+  const grid: number[][] = []
+  const dates: string[] = []
+  const today = new Date()
+  const dayOfWeek = today.getDay()
+
+  for (let w = weeks - 1; w >= 0; w--) {
+    const row: number[] = []
+    for (let d = 0; d < 7; d++) {
+      const offset = w * 7 + (dayOfWeek - d)
+      const date = new Date(today)
+      date.setDate(today.getDate() - offset)
+      const dateStr = date.toISOString().split("T")[0]
+      if (w === 0 && d === 0) dates.push(dateStr)
+      const logs = db.query(
+        "SELECT COUNT(CASE WHEN status = 'completed' THEN 1 END) as c FROM routine_logs WHERE date = ?",
+      ).get(dateStr) as { c: number }
+      row.push(logs.c)
+    }
+    grid.push(row)
+  }
+  return { grid, dates }
+}

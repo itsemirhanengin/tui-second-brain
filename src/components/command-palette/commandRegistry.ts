@@ -35,6 +35,8 @@ export function buildCommands(
     { id: "nav-notes", label: "Go to Notes", category: "Navigation", keywords: "life markdown write", action: go("life", "notes") },
     { id: "nav-budget", label: "Go to Budget", category: "Navigation", keywords: "life money finance spending", action: go("life", "budget") },
     { id: "nav-liabilities", label: "Go to Liabilities", category: "Navigation", keywords: "life debt loan credit card", action: go("life", "liabilities") },
+    { id: "nav-habits", label: "Go to Habits", category: "Navigation", keywords: "life daily tracker heatmap", action: go("life", "habits") },
+    { id: "nav-goals", label: "Go to Goals", category: "Navigation", keywords: "life objectives milestones target", action: go("life", "goals") },
     { id: "nav-routines", label: "Go to Routines", category: "Navigation", keywords: "habits daily checklist", action: go("routines", "list") },
     { id: "nav-routines-stats", label: "Go to Routine Statistics", category: "Navigation", keywords: "habits completion rate", action: go("routines", "stats") },
     { id: "nav-work-overview", label: "Go to Work Overview", category: "Navigation", keywords: "work dashboard summary", action: go("work", "workdashboard") },

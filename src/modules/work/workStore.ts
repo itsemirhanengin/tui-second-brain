@@ -183,3 +183,18 @@ export function getProjectBillable(projectId: number): number {
   const totalMinutes = getProjectTotalMinutes(projectId)
   return (totalMinutes / 60) * rate
 }
+
+export function getDailyWorkMinutes(days = 7): { date: string; minutes: number }[] {
+  const results: { date: string; minutes: number }[] = []
+  for (let i = days - 1; i >= 0; i--) {
+    const row = db.query(`
+      SELECT COALESCE(SUM(duration_minutes), 0) as total
+      FROM time_entries
+      WHERE date(start_time) = date('now', '-' || ? || ' days') AND is_running = 0
+    `).get(i) as { total: number }
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    results.push({ date: d.toISOString().split("T")[0], minutes: row.total })
+  }
+  return results
+}

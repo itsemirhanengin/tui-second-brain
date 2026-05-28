@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
 import { consumePendingAction } from "../../utils/pendingAction"
+import { setGlobalInputFocus } from "../../utils/inputFocus"
 import { EmptyState } from "../../components/shared/EmptyState"
 import {
   getTaskStatuses,
@@ -59,7 +60,8 @@ const PRIORITIES: Priority[] = ["none", "low", "medium", "high", "urgent"]
 
 export function TasksView() {
   const [view, setView] = useState<View>("list")
-  const [inputFocused, setInputFocused] = useState(false)
+  const [inputFocused, _setInputFocused] = useState(false)
+  const setInputFocused = (v: boolean) => { _setInputFocused(v); setGlobalInputFocus(v) }
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [, setDataVer] = useState(0)
   const bump = () => setDataVer((v) => v + 1)

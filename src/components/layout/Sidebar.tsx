@@ -26,6 +26,8 @@ const MENU: MenuItem[] = [
       { label: "Notes", subModule: "notes" },
       { label: "Budget", subModule: "budget" },
       { label: "Liabilities", subModule: "liabilities" },
+      { label: "Habits", subModule: "habits" },
+      { label: "Goals", subModule: "goals" },
     ],
   },
   {

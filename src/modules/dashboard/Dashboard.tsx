@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useKeyboard } from "@opentui/react"
 import { ProgressBar } from "../../components/shared/ProgressBar"
 import { CurrencyDisplay } from "../../components/shared/CurrencyDisplay"
 import { Badge } from "../../components/shared/Badge"
@@ -6,21 +7,82 @@ import { getTodayTotal, getCurrentGoal, getStreak } from "../life/water/waterSto
 import { getTodayRoutinesWithStatus } from "../routines/routinesStore"
 import { getMonthlyIncome, getMonthlyExpense, getTotalBalance } from "../life/budget/budgetStore"
 import { getUpcomingPayments } from "../life/liabilities/liabilitiesStore"
+import { getUpcomingRecurring } from "../life/budget/recurringStore"
 import { getRunningTimer, getTodayTotalMinutes, getProjects } from "../work/workStore"
+import { getTasks } from "../work/taskStore"
 import { getAllNotes } from "../life/notes/notesStore"
 import { getCurrency } from "../settings/settingsStore"
 import { formatCurrency } from "../../utils/currency"
-import { formatDuration, currentMonth, currentYear, getMonthName } from "../../utils/date"
+import { formatDuration, currentMonth, currentYear, getMonthName, addDays, today } from "../../utils/date"
 import { getNotifications, type AppNotification } from "../../utils/notifications"
+
+interface AgendaItem {
+  date: string
+  label: string
+  detail: string
+  color: string
+  source: string
+}
+
+function buildAgenda(dayOffset: number): AgendaItem[] {
+  const items: AgendaItem[] = []
+  const targetDate = addDays(today(), dayOffset)
+
+  const payments = getUpcomingPayments()
+  for (const p of payments) {
+    if (p.dueDate === targetDate) {
+      items.push({ date: p.dueDate, label: p.name, detail: `Payment due`, color: "#e94560", source: "budget" })
+    }
+  }
+
+  const recurring = getUpcomingRecurring(20)
+  for (const r of recurring) {
+    if (r.nextDate === targetDate) {
+      items.push({ date: r.nextDate, label: r.recurring.name, detail: `Recurring ${r.recurring.type}`, color: "#e94560", source: "budget" })
+    }
+  }
+
+  const tasks = getTasks()
+  for (const t of tasks) {
+    if (t.due_date === targetDate) {
+      items.push({ date: t.due_date!, label: t.title, detail: "Task due", color: "#7aa2f7", source: "work" })
+    }
+  }
+
+  const projects = getProjects("active")
+  for (const p of projects) {
+    if (p.deadline === targetDate) {
+      items.push({ date: p.deadline!, label: p.name, detail: "Project deadline", color: "#7aa2f7", source: "work" })
+    }
+  }
+
+  if (dayOffset === 0) {
+    const routines = getTodayRoutinesWithStatus()
+    for (const r of routines) {
+      if (r.isDue && !r.log) {
+        items.push({ date: targetDate, label: r.routine.name, detail: "Routine pending", color: "#bb9af7", source: "routines" })
+      }
+    }
+  }
+
+  return items
+}
 
 export function Dashboard() {
   const currency = getCurrency()
   const [tick, setTick] = useState(0)
+  const [agendaOffset, setAgendaOffset] = useState(0)
 
   useEffect(() => {
     const interval = setInterval(() => setTick((t) => t + 1), 5000)
     return () => clearInterval(interval)
   }, [])
+
+  useKeyboard((key) => {
+    if (key.name === "left") setAgendaOffset((o) => o - 1)
+    if (key.name === "right") setAgendaOffset((o) => o + 1)
+    if (key.name === "return") setAgendaOffset(0)
+  })
 
   const waterTotal = getTodayTotal()
   const waterGoal = getCurrentGoal()
@@ -168,6 +230,35 @@ export function Dashboard() {
           ))
         )}
       </box>
+
+      {(() => {
+        const agendaDate = addDays(today(), agendaOffset)
+        const dayName = new Date(agendaDate).toLocaleDateString("en-US", { weekday: "long" })
+        const label = agendaOffset === 0 ? "Today" : agendaOffset === 1 ? "Tomorrow" : agendaOffset === -1 ? "Yesterday" : dayName
+        const items = buildAgenda(agendaOffset)
+        const sourceColors: Record<string, string> = { budget: "#e94560", work: "#7aa2f7", routines: "#bb9af7" }
+
+        return (
+          <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>
+            <box style={{ flexDirection: "row", gap: 2 }}>
+              <text fg="#7aa2f7"><strong>Agenda</strong></text>
+              <text fg="#e2e8f0">{label} — {agendaDate}</text>
+              <text fg="#414868">[Left/Right] Navigate [Enter] Today</text>
+            </box>
+            {items.length === 0 ? (
+              <text fg="#414868">Nothing scheduled</text>
+            ) : (
+              items.map((item, i) => (
+                <box key={i} style={{ flexDirection: "row", gap: 1 }}>
+                  <text fg={sourceColors[item.source] ?? "#565f89"}>●</text>
+                  <text fg="#e2e8f0">{item.label}</text>
+                  <text fg="#565f89">{item.detail}</text>
+                </box>
+              ))
+            )}
+          </box>
+        )
+      })()}
 
       <text fg="#414868">Shift+1..5: Switch modules | Tab: Switch sub-modules | ?: Help</text>
     </box>

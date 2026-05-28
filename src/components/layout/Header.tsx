@@ -20,6 +20,8 @@ const SUB_TITLES: Record<string, string> = {
   notes: "Notes",
   budget: "Budget",
   liabilities: "Liabilities",
+  habits: "Habits",
+  goals: "Goals",
   list: "My Routines",
   stats: "Statistics",
   projects: "Projects",

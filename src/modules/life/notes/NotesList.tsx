@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
 import { consumePendingAction } from "../../../utils/pendingAction"
+import { setGlobalInputFocus } from "../../../utils/inputFocus"
 import { EmptyState } from "../../../components/shared/EmptyState"
 import {
   getAllNotes,
@@ -24,7 +25,8 @@ export function NotesList() {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [activeNote, setActiveNote] = useState<Note | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [inputFocused, setInputFocused] = useState(false)
+  const [inputFocused, _setInputFocused] = useState(false)
+  const setInputFocused = (v: boolean) => { _setInputFocused(v); setGlobalInputFocus(v) }
   const [passwordInput, setPasswordInput] = useState("")
   const [pendingAction, setPendingAction] = useState<"view" | "edit" | null>(null)
   const [newTitle, setNewTitle] = useState("")

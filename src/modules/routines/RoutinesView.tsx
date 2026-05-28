@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
 import { consumePendingAction } from "../../utils/pendingAction"
+import { setGlobalInputFocus } from "../../utils/inputFocus"
 import { Badge } from "../../components/shared/Badge"
 import { ProgressBar } from "../../components/shared/ProgressBar"
 import { EmptyState } from "../../components/shared/EmptyState"
@@ -15,9 +16,11 @@ import {
   getLogsByRoutine,
   getRoutineById,
   updateRoutine,
+  getWeeklyCompletionGrid,
   type Routine,
   type RoutineLog,
 } from "./routinesStore"
+import { asciiHeatmap } from "../../utils/charts"
 
 type View = "today" | "all" | "detail" | "new" | "log_done" | "log_skip" | "stats"
 
@@ -27,7 +30,8 @@ export function RoutinesView({ subView }: { subView: "list" | "stats" }) {
   const propView: View = subView === "stats" ? "stats" : "today"
   const [view, setView] = useState<View>(propView)
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [inputFocused, setInputFocused] = useState(false)
+  const [inputFocused, _setInputFocused] = useState(false)
+  const setInputFocused = (v: boolean) => { _setInputFocused(v); setGlobalInputFocus(v) }
   const [, setDataVer] = useState(0)
   const bump = () => setDataVer((v) => v + 1)
 
@@ -243,10 +247,34 @@ export function RoutinesView({ subView }: { subView: "list" | "stats" }) {
 
   if (view === "stats") {
     const activeRoutines = getRoutines(true)
+    const { grid } = getWeeklyCompletionGrid(8)
+    const maxVal = Math.max(...grid.flat(), 1)
+    const heatChars = asciiHeatmap(grid, maxVal)
+    const dayLabels = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
+
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>
         <text fg="#7aa2f7"><strong>Routine Statistics</strong></text>
         <text fg="#565f89">ESC to go back</text>
+
+        <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>
+          <text fg="#565f89">Completion Heatmap (8 weeks):</text>
+          <box style={{ flexDirection: "row", gap: 0 }}>
+            <text fg="#414868">{"   "}</text>
+            {heatChars.map((_, wi) => <text key={wi} fg="#414868">{String(wi + 1).padStart(2, " ")}</text>)}
+          </box>
+          {dayLabels.map((day, di) => (
+            <box key={day} style={{ flexDirection: "row", gap: 0 }}>
+              <text fg="#565f89">{day} </text>
+              {heatChars.map((week, wi) => {
+                const val = grid[wi][di]
+                const color = val === 0 ? "#292e42" : val <= 1 ? "#565f89" : val <= 3 ? "#bb9af7" : "#16c79a"
+                return <text key={wi} fg={color}>{` ${week[di]}`}</text>
+              })}
+            </box>
+          ))}
+        </box>
+
         {activeRoutines.length === 0 ? <EmptyState message="No routines yet" hint="" /> : (
           <scrollbox style={{ flexGrow: 1, borderStyle: "single", borderColor: "#292e42", padding: 1 }} viewportCulling>
             {activeRoutines.map((r, idx) => {

@@ -7,11 +7,14 @@ import { WaterTracker } from "./modules/life/water/WaterTracker"
 import { NotesList } from "./modules/life/notes/NotesList"
 import { BudgetDashboard } from "./modules/life/budget/BudgetDashboard"
 import { LiabilitiesOverview } from "./modules/life/liabilities/LiabilitiesOverview"
+import { HabitsView } from "./modules/life/habits/HabitsView"
+import { GoalsView } from "./modules/life/goals/GoalsView"
 import { RoutinesView } from "./modules/routines/RoutinesView"
 import { WorkView } from "./modules/work/WorkView"
 import { SettingsView } from "./modules/settings/SettingsView"
 import { CommandPalette } from "./components/command-palette/CommandPalette"
 import { buildCommands } from "./components/command-palette/commandRegistry"
+import { isGlobalInputFocused } from "./utils/inputFocus"
 
 export function App() {
   const nav = useNavigation()
@@ -31,6 +34,8 @@ export function App() {
     }
 
     if (showCommandPalette) return
+
+    if (isGlobalInputFocused()) return
 
     if (key.name === "?" || (key.shift && key.name === "/")) {
       setShowHelp((h) => !h)
@@ -114,6 +119,8 @@ export function App() {
           case "notes": return <NotesList />
           case "budget": return <BudgetDashboard />
           case "liabilities": return <LiabilitiesOverview />
+          case "habits": return <HabitsView />
+          case "goals": return <GoalsView />
           default: return <WaterTracker />
         }
       case "routines":

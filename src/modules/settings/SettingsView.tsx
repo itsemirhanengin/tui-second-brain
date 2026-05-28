@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { useKeyboard } from "@opentui/react"
+import { setGlobalInputFocus } from "../../utils/inputFocus"
 import { getAllSettings, setSetting, getCurrency, getWaterGoal } from "./settingsStore"
 import { setGoal as setWaterGoal } from "../life/water/waterStore"
 import { exportToJson, exportAllCsv } from "../../utils/export"
@@ -22,7 +23,8 @@ export function SettingsView({ subView }: { subView: string }) {
     setEditField("")
   }, [propView])
 
-  const [inputFocused, setInputFocused] = useState(false)
+  const [inputFocused, _setInputFocused] = useState(false)
+  const setInputFocused = (v: boolean) => { _setInputFocused(v); setGlobalInputFocus(v) }
   const [editField, setEditField] = useState("")
   const [editValue, setEditValue] = useState("")
   const [exportMessage, setExportMessage] = useState("")
