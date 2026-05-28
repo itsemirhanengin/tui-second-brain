@@ -32,6 +32,7 @@ import { formatCurrency } from "../../utils/currency"
 import { formatDuration, daysUntil, formatDate } from "../../utils/date"
 import { TasksView } from "./TasksView"
 import { getTasks, getTaskStatuses, getTaskCountByStatus, getTasksByStatus, PROGRESS_ICONS, type Task } from "./taskStore"
+import { getPomodoroState, startPomodoro, stopPomodoro, getTodayPomodoroCount, formatPomodoroTime } from "./pomodoroStore"
 
 type View = "projects" | "clients" | "tasks" | "timetracker" | "dashboard" | "new_project" | "new_client" | "manual_entry" | "project_detail"
 
@@ -150,6 +151,12 @@ export function WorkView({ subView }: { subView: string }) {
           }
           break
         case "m": setView("manual_entry"); setManualStep(0); setManualDesc(""); setInputFocused(true); break
+        case "o": {
+          const pomo = getPomodoroState()
+          if (pomo.phase !== "idle") { stopPomodoro(); bump() }
+          else { startPomodoro(null, "Pomodoro"); bump() }
+          break
+        }
         case "x":
           if (timeEntries[selectedIndex]) { deleteTimeEntry(timeEntries[selectedIndex].id); setSelectedIndex(0); bump() }
           break
@@ -357,12 +364,27 @@ export function WorkView({ subView }: { subView: string }) {
           </box>
         )}
 
+        {(() => {
+          const pomo = getPomodoroState()
+          if (pomo.phase === "idle") return null
+          const color = pomo.phase === "work" ? "#e94560" : "#16c79a"
+          const label = pomo.phase === "work" ? "WORK" : "BREAK"
+          return (
+            <box style={{ borderStyle: "rounded", borderColor: color, padding: 1, flexDirection: "column" }}>
+              <text fg={color}>Pomodoro {label}: {formatPomodoroTime(pomo.remainingSeconds)}</text>
+              {pomo.taskTitle && <text fg="#e2e8f0">{pomo.taskTitle}</text>}
+              <text fg="#565f89">Session: {"#"}{pomo.sessionCount} | Today: {"#"}{getTodayPomodoroCount()} | [O] Stop</text>
+            </box>
+          )
+        })()}
+
         <box style={{ flexDirection: "row", gap: 3 }}>
           <text fg="#565f89">Today: {formatDuration(todayMin)}</text>
           <text fg="#565f89">This Week: {formatDuration(weekMin)}</text>
+          <text fg="#565f89">Pomodoros today: {"#"}{getTodayPomodoroCount()}</text>
         </box>
 
-        <text fg="#565f89">[T] {runningTimer ? "Stop" : "Start"} Timer [M] Manual Entry [X] Delete [ESC] Back</text>
+        <text fg="#565f89">[T] {runningTimer ? "Stop" : "Start"} Timer [O] Pomodoro [M] Manual Entry [X] Delete [ESC] Back</text>
 
         {timeEntries.length === 0 ? <EmptyState message="No time entries" hint="Press 'T' to start a timer" /> : (
           <scrollbox style={{ flexGrow: 1, borderStyle: "single", borderColor: "#292e42", padding: 1 }} viewportCulling>

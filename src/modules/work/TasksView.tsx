@@ -34,6 +34,14 @@ import {
   startTimer,
   stopTimer,
 } from "./workStore"
+import {
+  startPomodoro,
+  stopPomodoro,
+  getPomodoroState,
+  getTodayPomodoroCount,
+  getTaskPomodoroCount,
+  formatPomodoroTime,
+} from "./pomodoroStore"
 import { formatDuration } from "../../utils/date"
 
 type View = "list" | "kanban" | "new_task" | "edit_task" | "manage_statuses" | "new_status" | "edit_status" | "task_detail"
@@ -245,6 +253,16 @@ export function TasksView() {
             setStartingTimer(true); setInputFocused(true)
           }
           break
+        case "o": {
+          const pomo = getPomodoroState()
+          if (pomo.phase !== "idle") {
+            stopPomodoro(); bump()
+          } else if (allTasks[selectedIndex]) {
+            const t = allTasks[selectedIndex]
+            startPomodoro(t.id, t.title); bump()
+          }
+          break
+        }
       }
     } else if (view === "kanban") {
       const colTasks = statuses[kanbanCol] ? getTasksByStatus(statuses[kanbanCol].id, filterProjectId ?? undefined) : []
@@ -507,6 +525,12 @@ export function TasksView() {
           {detailTask.due_date && <text fg="#565f89">Due: {detailTask.due_date}</text>}
         </box>
 
+        {(() => {
+          const pc = getTaskPomodoroCount(detailTask.id)
+          if (pc === 0) return null
+          return <text fg="#e94560">Pomodoros: {"#"}{pc}</text>
+        })()}
+
         <box style={{ height: 1 }} />
         <text fg="#bb9af7"><strong>Subtasks</strong> <span fg="#565f89">({completed}/{subs.length})</span></text>
         <text fg="#565f89">[S] Add [Enter] Toggle [X] Delete [ESC] Back</text>
@@ -610,7 +634,7 @@ export function TasksView() {
         <text fg="#bb9af7">[{filterLabel}]</text>
         {runningTimer && <text fg="#f39c12">Timer: {formatDuration(elapsed)} ({runningTimer.description})</text>}
       </box>
-      <text fg="#565f89">[N] New [Enter] Detail [E] Edit [S] Subtask [K] Kanban [M] Statuses [X] Del [P] Priority [F] Filter [T] Timer</text>
+      <text fg="#565f89">[N] New [Enter] Detail [E] Edit [S] Subtask [K] Kanban [M] Statuses [X] Del [P] Priority [F] Filter [T] Timer [O] Pomodoro</text>
       {allTasks.length === 0 ? <EmptyState message="No tasks yet" hint="Press 'N' to create a task" /> : (
         <scrollbox style={{ flexGrow: 1, borderStyle: "single", borderColor: "#292e42", padding: 1 }} viewportCulling>
           {allTasks.map((task, idx) => {
@@ -629,6 +653,11 @@ export function TasksView() {
                   if (!sc || sc.total === 0) return null
                   const allDone = sc.completed === sc.total
                   return <text fg={allDone ? "#16c79a" : "#bb9af7"}>[{sc.completed}/{sc.total}]</text>
+                })()}
+                {(() => {
+                  const pc = getTaskPomodoroCount(task.id)
+                  if (pc === 0) return null
+                  return <text fg="#e94560">{"#"}{pc}</text>
                 })()}
                 {status && <text fg={status.color}>{status.name}</text>}
                 {project && <text fg="#414868">[{project.name}]</text>}

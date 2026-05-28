@@ -225,6 +225,15 @@ const MIGRATIONS: string[] = [
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
   )`,
 
+  `CREATE TABLE IF NOT EXISTS pomodoro_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER,
+    date TEXT NOT NULL DEFAULT (date('now')),
+    completed_at TEXT NOT NULL DEFAULT (datetime('now')),
+    work_minutes INTEGER NOT NULL DEFAULT 25,
+    FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL
+  )`,
+
   `CREATE TABLE IF NOT EXISTS subtasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     task_id INTEGER NOT NULL,

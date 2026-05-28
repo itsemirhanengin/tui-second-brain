@@ -36,11 +36,11 @@
 
 ### Pomodoro Timer
 
-- [ ] Pomodoro mode alongside existing timer: 25min work / 5min break cycle
-- [ ] Configurable work/break durations (Settings)
-- [ ] Pomodoro count per task and per day
-- [ ] Visual countdown in StatusBar with phase indicator (WORK / BREAK)
-- [ ] Audio bell via terminal bell character (`\x07`) on phase switch
+- [x] Pomodoro mode alongside existing timer: 25min work / 5min break cycle
+- [x] Configurable work/break durations (Settings)
+- [x] Pomodoro count per task and per day
+- [x] Visual countdown in StatusBar with phase indicator (WORK / BREAK)
+- [x] Audio bell via terminal bell character (`\x07`) on phase switch
 
 ---
 

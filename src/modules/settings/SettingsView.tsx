@@ -93,6 +93,16 @@ export function SettingsView({ subView }: { subView: string }) {
         case "4":
           setSetting("notifications_budget", (settings.notifications_budget ?? "1") === "1" ? "0" : "1")
           break
+        case "w":
+          setEditField("pomodoro_work_minutes")
+          setEditValue(settings.pomodoro_work_minutes ?? "25")
+          setInputFocused(true)
+          break
+        case "b":
+          setEditField("pomodoro_break_minutes")
+          setEditValue(settings.pomodoro_break_minutes ?? "5")
+          setInputFocused(true)
+          break
       }
     } else if (view === "water") {
       if (key.name === "g") {
@@ -160,6 +170,8 @@ export function SettingsView({ subView }: { subView: string }) {
       date_format: "Date Format (YYYY-MM-DD):",
       time_format: "Time Format (12h/24h):",
       water_goal: "Daily Water Goal (ml):",
+      pomodoro_work_minutes: "Pomodoro Work Duration (minutes):",
+      pomodoro_break_minutes: "Pomodoro Break Duration (minutes):",
     }
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>
@@ -235,6 +247,16 @@ export function SettingsView({ subView }: { subView: string }) {
             <text fg={(settings.notifications_budget ?? "1") === "1" ? theme.success : theme.textMuted}>
               {(settings.notifications_budget ?? "1") === "1" ? "ON" : "OFF"}
             </text>
+          </box>
+          <box style={{ height: 1 }} />
+          <text fg={theme.textSecondary}><strong>Pomodoro</strong></text>
+          <box style={{ flexDirection: "row", gap: 1 }}>
+            <text fg={theme.textSecondary}>[W] Work Duration:</text>
+            <text fg={theme.text}>{settings.pomodoro_work_minutes ?? "25"} min</text>
+          </box>
+          <box style={{ flexDirection: "row", gap: 1 }}>
+            <text fg={theme.textSecondary}>[B] Break Duration:</text>
+            <text fg={theme.text}>{settings.pomodoro_break_minutes ?? "5"} min</text>
           </box>
           <box style={{ height: 1 }} />
           <text fg={theme.textMuted}>Data stored at: {DATA_DIR}</text>
