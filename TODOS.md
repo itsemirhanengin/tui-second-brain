@@ -15,10 +15,10 @@
 
 ### Recurring Transactions
 
-- [ ] Define recurring income/expense rules (amount, category, account, frequency, day)
-- [ ] Auto-generate transactions on app startup for missed periods
-- [ ] Mark as "Rent", "Netflix", "Salary" etc. with edit/pause/delete support
-- [ ] Show upcoming recurring transactions in Budget dashboard
+- [x] Define recurring income/expense rules (amount, category, account, frequency, day)
+- [x] Auto-generate transactions on app startup for missed periods
+- [x] Mark as "Rent", "Netflix", "Salary" etc. with edit/pause/delete support
+- [x] Show upcoming recurring transactions in Budget dashboard
 
 ### Notification System
 

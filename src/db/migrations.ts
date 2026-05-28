@@ -189,6 +189,26 @@ const MIGRATIONS: string[] = [
     progress TEXT NOT NULL DEFAULT 'none' CHECK(progress IN ('none','quarter','half','three_quarter','full','cancelled'))
   )`,
 
+  `CREATE TABLE IF NOT EXISTS recurring_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    type TEXT NOT NULL CHECK(type IN ('income','expense')),
+    amount REAL NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'TRY',
+    category_id INTEGER,
+    account_id INTEGER NOT NULL,
+    frequency TEXT NOT NULL CHECK(frequency IN ('daily','weekly','biweekly','monthly','yearly')),
+    day_of_month INTEGER,
+    day_of_week INTEGER,
+    start_date TEXT NOT NULL,
+    end_date TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    last_generated TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
+  )`,
+
   `CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,

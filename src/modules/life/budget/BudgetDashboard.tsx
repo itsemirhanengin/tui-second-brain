@@ -24,11 +24,28 @@ import {
   type Transaction,
   type CategoryBudgetSummary,
 } from "./budgetStore"
+import {
+  getRecurringTransactions,
+  createRecurring,
+  deleteRecurring,
+  toggleRecurringActive,
+  getUpcomingRecurring,
+  type RecurringTransaction,
+  type RecurringFrequency,
+} from "./recurringStore"
 import { getCurrency } from "../../settings/settingsStore"
 import { formatCurrency } from "../../../utils/currency"
 import { currentMonth, currentYear, getMonthName, today } from "../../../utils/date"
 
-type View = "overview" | "transactions" | "add_tx" | "accounts" | "add_account" | "categories" | "add_category" | "set_limit"
+type View = "overview" | "transactions" | "add_tx" | "accounts" | "add_account" | "categories" | "add_category" | "set_limit" | "recurring" | "add_recurring"
+
+const FREQ_LABELS: Record<RecurringFrequency, string> = {
+  daily: "Daily",
+  weekly: "Weekly",
+  biweekly: "Biweekly",
+  monthly: "Monthly",
+  yearly: "Yearly",
+}
 
 export function BudgetDashboard() {
   const currency = getCurrency()
@@ -59,6 +76,15 @@ export function BudgetDashboard() {
 
   const [limitInput, setLimitInput] = useState("")
 
+  const [recName, setRecName] = useState("")
+  const [recType, setRecType] = useState<"income" | "expense">("expense")
+  const [recAmount, setRecAmount] = useState("")
+  const [recFreq, setRecFreq] = useState<RecurringFrequency>("monthly")
+  const [recDay, setRecDay] = useState("1")
+  const [recCatIdx, setRecCatIdx] = useState(0)
+  const [recAccIdx, setRecAccIdx] = useState(0)
+  const [recStep, setRecStep] = useState(0)
+
   const income = getMonthlyIncome(month, year)
   const expense = getMonthlyExpense(month, year)
   const balance = getTotalBalance()
@@ -87,6 +113,11 @@ export function BudgetDashboard() {
       didConsume.current = true
       setView("add_tx"); setTxStep(0); setTxAmount(""); setTxDesc("")
       setTxType("expense"); setInputFocused(true)
+    } else if (action === "new-recurring") {
+      didConsume.current = true
+      setRecName(""); setRecType("expense"); setRecAmount(""); setRecFreq("monthly")
+      setRecDay("1"); setRecCatIdx(0); setRecAccIdx(0); setRecStep(0)
+      setView("add_recurring"); setInputFocused(true)
     }
   })
 
@@ -96,6 +127,18 @@ export function BudgetDashboard() {
       return
     }
 
+    if (view === "add_recurring") {
+      const relevantCats = recType === "income" ? incomeCategories : expenseCategories
+      const textCount = 5
+      if (recStep === textCount) {
+        if (key.name === "up") { setRecCatIdx((i) => Math.max(0, i - 1)); return }
+        if (key.name === "down") { setRecCatIdx((i) => Math.min(relevantCats.length - 1, i + 1)); return }
+      } else if (recStep === textCount + 1) {
+        if (key.name === "up") { setRecAccIdx((i) => Math.max(0, i - 1)); return }
+        if (key.name === "down") { setRecAccIdx((i) => Math.min(accounts.length - 1, i + 1)); return }
+      }
+    }
+
     if (inputFocused) return
 
     if (view === "overview") {
@@ -103,7 +146,26 @@ export function BudgetDashboard() {
         case "t": setView("transactions"); setSelectedIndex(0); break
         case "a": setView("accounts"); setSelectedIndex(0); break
         case "c": setView("categories"); setSelectedIndex(0); break
+        case "r": setView("recurring"); setSelectedIndex(0); break
         case "n": setView("add_tx"); setTxStep(0); setInputFocused(true); break
+      }
+    } else if (view === "recurring") {
+      const recs = getRecurringTransactions()
+      switch (key.name) {
+        case "up": setSelectedIndex((i) => Math.max(0, i - 1)); break
+        case "down": setSelectedIndex((i) => Math.min(recs.length - 1, i + 1)); break
+        case "n":
+          setRecName(""); setRecType("expense"); setRecAmount(""); setRecFreq("monthly")
+          setRecDay("1"); setRecCatIdx(0); setRecAccIdx(0); setRecStep(0)
+          setView("add_recurring"); setInputFocused(true)
+          break
+        case "p":
+          if (recs[selectedIndex]) toggleRecurringActive(recs[selectedIndex].id)
+          break
+        case "x":
+          if (recs[selectedIndex]) { deleteRecurring(recs[selectedIndex].id); setSelectedIndex(Math.max(0, selectedIndex - 1)) }
+          break
+        case "escape": setView("overview"); break
       }
     } else if (view === "transactions") {
       switch (key.name) {
@@ -231,6 +293,73 @@ export function BudgetDashboard() {
     )
   }
 
+  if (view === "add_recurring") {
+    const textSteps = [
+      { label: "Name (e.g. Rent, Netflix):", placeholder: "Netflix", value: recName, setter: setRecName },
+      { label: "Type (income/expense):", placeholder: "expense", value: recType, setter: (v: string) => setRecType(v as "income" | "expense") },
+      { label: `Amount (${currency}):`, placeholder: "0", value: recAmount, setter: setRecAmount },
+      { label: "Frequency (daily/weekly/biweekly/monthly/yearly):", placeholder: "monthly", value: recFreq, setter: (v: string) => setRecFreq(v as RecurringFrequency) },
+      { label: "Day of month (1-31, for monthly/yearly):", placeholder: "1", value: recDay, setter: setRecDay },
+    ]
+    const relevantCats = recType === "income" ? incomeCategories : expenseCategories
+
+    if (recStep < textSteps.length) {
+      const step = textSteps[recStep]
+      return (
+        <box style={{ flexDirection: "column", gap: 1 }}>
+          <text fg="#7aa2f7"><strong>New Recurring</strong> (Step {recStep + 1}/{textSteps.length + 2})</text>
+          <box style={{ flexDirection: "row", gap: 1 }}>
+            <text fg="#565f89">{step.label}</text>
+            <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={() => setRecStep(recStep + 1)} focused style={{ width: 30 }} />
+          </box>
+          <text fg="#414868">Enter to continue, ESC to cancel</text>
+        </box>
+      )
+    }
+    if (recStep === textSteps.length) {
+      return (
+        <box style={{ flexDirection: "column", gap: 1 }}>
+          <text fg="#7aa2f7"><strong>New Recurring</strong> — Category (Step {recStep + 1}/{textSteps.length + 2})</text>
+          {relevantCats.length === 0 ? (
+            <text fg="#565f89">No categories for {recType}</text>
+          ) : (
+            relevantCats.map((cat, i) => (
+              <text key={cat.id} fg={i === recCatIdx ? "#7aa2f7" : "#565f89"}>
+                {i === recCatIdx ? "▸ " : "  "}{cat.icon} {cat.name}
+              </text>
+            ))
+          )}
+          <text fg="#414868">Up/Down to pick, Enter to continue</text>
+          <input placeholder="" onSubmit={() => setRecStep(recStep + 1)} focused style={{ width: 1 }} />
+        </box>
+      )
+    }
+    if (recStep === textSteps.length + 1) {
+      return (
+        <box style={{ flexDirection: "column", gap: 1 }}>
+          <text fg="#7aa2f7"><strong>New Recurring</strong> — Account (Step {recStep + 1}/{textSteps.length + 2})</text>
+          {accounts.map((acc, i) => (
+            <text key={acc.id} fg={i === recAccIdx ? "#7aa2f7" : "#565f89"}>
+              {i === recAccIdx ? "▸ " : "  "}{acc.name} ({formatCurrency(acc.balance, currency)})
+            </text>
+          ))}
+          <text fg="#414868">Up/Down to pick, Enter to create</text>
+          <input placeholder="" onSubmit={() => {
+            const catId = (recType === "income" ? incomeCategories : expenseCategories)[recCatIdx]?.id ?? null
+            const accId = accounts[recAccIdx]?.id
+            if (accId && recName.trim()) {
+              createRecurring(
+                recName.trim(), recType, Number(recAmount) || 0, catId, accId,
+                recFreq, Number(recDay) || 1, null, today(), null,
+              )
+            }
+            setView("recurring"); setInputFocused(false)
+          }} focused style={{ width: 1 }} />
+        </box>
+      )
+    }
+  }
+
   if (view === "add_tx") {
     const relevantCats = txType === "income" ? incomeCategories : txType === "expense" ? expenseCategories : []
     const steps = [
@@ -346,6 +475,43 @@ export function BudgetDashboard() {
     )
   }
 
+  if (view === "recurring") {
+    const recs = getRecurringTransactions()
+    return (
+      <box style={{ flexDirection: "column", gap: 1 }}>
+        <text fg="#7aa2f7"><strong>Recurring Transactions</strong></text>
+        <text fg="#565f89">[N] New [P] Pause/Resume [X] Delete [ESC] Back</text>
+        {recs.length === 0 ? <EmptyState message="No recurring transactions" hint="Press 'N' to create" /> : (
+          <scrollbox style={{ flexGrow: 1, borderStyle: "single", borderColor: "#292e42", padding: 1 }} viewportCulling>
+            {recs.map((rec, idx) => {
+              const color = rec.type === "income" ? "#16c79a" : "#e94560"
+              const sign = rec.type === "income" ? "+" : "-"
+              const cat = rec.category_id ? categories.find((c) => c.id === rec.category_id) : null
+              const acc = accounts.find((a) => a.id === rec.account_id)
+              return (
+                <box key={rec.id} style={{ flexDirection: "column", marginBottom: 1 }}>
+                  <box style={{ flexDirection: "row", gap: 1 }}>
+                    <text fg={idx === selectedIndex ? "#7aa2f7" : "#565f89"}>{idx === selectedIndex ? "▸" : " "}</text>
+                    <text fg={rec.is_active ? "#e2e8f0" : "#414868"}>{rec.name}</text>
+                    <text fg={rec.is_active ? color : "#414868"}>{sign}{formatCurrency(rec.amount, currency)}</text>
+                    <text fg="#565f89">{FREQ_LABELS[rec.frequency]}</text>
+                    {rec.frequency === "monthly" && rec.day_of_month && <text fg="#414868">day {rec.day_of_month}</text>}
+                    {!rec.is_active && <text fg="#f39c12">[PAUSED]</text>}
+                  </box>
+                  <box style={{ paddingLeft: 4, flexDirection: "row", gap: 2 }}>
+                    {cat && <text fg="#414868">{cat.icon} {cat.name}</text>}
+                    {acc && <text fg="#414868">{acc.name}</text>}
+                    {rec.last_generated && <text fg="#414868">Last: {rec.last_generated}</text>}
+                  </box>
+                </box>
+              )
+            })}
+          </scrollbox>
+        )}
+      </box>
+    )
+  }
+
   // Overview
   const net = income - expense
   return (
@@ -391,7 +557,31 @@ export function BudgetDashboard() {
         </box>
       )}
 
-      <text fg="#565f89">[N] New Transaction [T] All Transactions [A] Accounts [C] Categories</text>
+      {(() => {
+        const upcoming = getUpcomingRecurring(4)
+        if (upcoming.length === 0) return null
+        return (
+          <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>
+            <text fg="#565f89">Upcoming Recurring:</text>
+            {upcoming.map((u) => {
+              const color = u.recurring.type === "income" ? "#16c79a" : "#e94560"
+              const sign = u.recurring.type === "income" ? "+" : "-"
+              return (
+                <box key={u.recurring.id} style={{ flexDirection: "row", gap: 1 }}>
+                  <text fg="#565f89">{u.nextDate}</text>
+                  <text fg="#e2e8f0">{u.recurring.name}</text>
+                  <text fg={color}>{sign}{formatCurrency(u.recurring.amount, currency)}</text>
+                  <text fg="#414868">
+                    {u.daysLeft === 0 ? "today" : u.daysLeft === 1 ? "tomorrow" : `in ${u.daysLeft}d`}
+                  </text>
+                </box>
+              )
+            })}
+          </box>
+        )
+      })()}
+
+      <text fg="#565f89">[N] New Transaction [T] Transactions [A] Accounts [C] Categories [R] Recurring</text>
     </box>
   )
 }

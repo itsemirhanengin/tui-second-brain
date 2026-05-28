@@ -49,6 +49,7 @@ export function buildCommands(
     { id: "new-task", label: "New Task", category: "Quick Action", keywords: "create add todo work", action: goWithAction("work", "tasks", "new-task") },
     { id: "new-note", label: "New Note", category: "Quick Action", keywords: "create add write markdown", action: goWithAction("life", "notes", "new-note") },
     { id: "new-transaction", label: "New Transaction", category: "Quick Action", keywords: "create add expense income money budget", action: goWithAction("life", "budget", "new-transaction") },
+    { id: "new-recurring", label: "New Recurring Transaction", category: "Quick Action", keywords: "create add subscription rent salary recurring", action: goWithAction("life", "budget", "new-recurring") },
     { id: "new-client", label: "New Client", category: "Quick Action", keywords: "create add customer work", action: goWithAction("work", "clients", "new-client") },
     { id: "new-project", label: "New Project", category: "Quick Action", keywords: "create add work", action: goWithAction("work", "projects", "new-project") },
     { id: "new-routine", label: "New Routine", category: "Quick Action", keywords: "create add habit daily", action: goWithAction("routines", "list", "new-routine") },
