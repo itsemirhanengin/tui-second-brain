@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useKeyboard } from "@opentui/react"
 import { getAllSettings, setSetting, getCurrency, getWaterGoal } from "./settingsStore"
 import { setGoal as setWaterGoal } from "../life/water/waterStore"
@@ -10,8 +10,14 @@ import { join } from "path"
 type View = "general" | "water" | "budget" | "export"
 
 export function SettingsView({ subView }: { subView: string }) {
-  const initial = (subView === "water" ? "water" : subView === "budget" ? "budget" : subView === "export" ? "export" : "general") as View
-  const [view, setView] = useState<View>(initial)
+  const propView = (subView === "water" ? "water" : subView === "budget" ? "budget" : subView === "export" ? "export" : "general") as View
+  const [view, setView] = useState<View>(propView)
+
+  useEffect(() => {
+    setView(propView)
+    setInputFocused(false)
+    setEditField("")
+  }, [propView])
   const [inputFocused, setInputFocused] = useState(false)
   const [editField, setEditField] = useState("")
   const [editValue, setEditValue] = useState("")

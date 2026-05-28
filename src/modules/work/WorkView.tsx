@@ -34,8 +34,14 @@ type View = "projects" | "clients" | "timetracker" | "dashboard" | "new_project"
 
 export function WorkView({ subView }: { subView: string }) {
   const currency = getCurrency()
-  const initialView = (subView === "clients" ? "clients" : subView === "timetracker" ? "timetracker" : subView === "workdashboard" ? "dashboard" : "projects") as View
-  const [view, setView] = useState<View>(initialView)
+  const propView = (subView === "clients" ? "clients" : subView === "timetracker" ? "timetracker" : subView === "workdashboard" ? "dashboard" : "projects") as View
+  const [view, setView] = useState<View>(propView)
+
+  useEffect(() => {
+    setView(propView)
+    setSelectedIndex(0)
+    setInputFocused(false)
+  }, [propView])
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [inputFocused, setInputFocused] = useState(false)
   const [activeProject, setActiveProject] = useState<Project | null>(null)
@@ -124,7 +130,7 @@ export function WorkView({ subView }: { subView: string }) {
     } else if (view === "project_detail") {
       if (key.name === "escape") setView("projects")
     } else if (key.name === "escape") {
-      setView(initialView)
+      setView(propView)
       setInputFocused(false)
     }
   })

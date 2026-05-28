@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useKeyboard } from "@opentui/react"
 import { Badge } from "../../components/shared/Badge"
 import { ProgressBar } from "../../components/shared/ProgressBar"
@@ -23,9 +23,16 @@ type View = "today" | "all" | "detail" | "new" | "log_done" | "log_skip" | "stat
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
 export function RoutinesView({ subView }: { subView: "list" | "stats" }) {
-  const [view, setView] = useState<View>(subView === "stats" ? "stats" : "today")
+  const propView: View = subView === "stats" ? "stats" : "today"
+  const [view, setView] = useState<View>(propView)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [inputFocused, setInputFocused] = useState(false)
+
+  useEffect(() => {
+    setView(propView)
+    setSelectedIndex(0)
+    setInputFocused(false)
+  }, [propView])
   const [activeRoutine, setActiveRoutine] = useState<Routine | null>(null)
 
   const todayRoutines = getTodayRoutinesWithStatus()
