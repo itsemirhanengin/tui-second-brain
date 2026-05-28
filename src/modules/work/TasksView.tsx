@@ -14,11 +14,17 @@ import {
   updateTaskStatus,
   deleteTaskStatus,
   getTaskCountByStatus,
+  getSubtasks,
+  createSubtask,
+  toggleSubtask,
+  deleteSubtask,
+  getAllSubtaskCounts,
   PROGRESS_ICONS,
   PRIORITY_ICONS,
   COLOR_PALETTE,
   type TaskStatus,
   type Task,
+  type Subtask,
   type ProgressLevel,
   type Priority,
 } from "./taskStore"
@@ -30,7 +36,7 @@ import {
 } from "./workStore"
 import { formatDuration } from "../../utils/date"
 
-type View = "list" | "kanban" | "new_task" | "edit_task" | "manage_statuses" | "new_status" | "edit_status"
+type View = "list" | "kanban" | "new_task" | "edit_task" | "manage_statuses" | "new_status" | "edit_status" | "task_detail"
 
 const PROGRESS_LEVELS: ProgressLevel[] = ["none", "quarter", "half", "three_quarter", "full", "cancelled"]
 const PROGRESS_LABELS: Record<ProgressLevel, string> = {
@@ -47,6 +53,8 @@ export function TasksView() {
   const [view, setView] = useState<View>("list")
   const [inputFocused, setInputFocused] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [, setDataVer] = useState(0)
+  const bump = () => setDataVer((v) => v + 1)
   const [kanbanCol, setKanbanCol] = useState(0)
   const [kanbanRow, setKanbanRow] = useState(0)
   const [filterProjectId, setFilterProjectId] = useState<number | null>(null)
@@ -91,6 +99,13 @@ export function TasksView() {
 
   const [timerDesc, setTimerDesc] = useState("")
   const [startingTimer, setStartingTimer] = useState(false)
+
+  const [detailTask, setDetailTask] = useState<Task | null>(null)
+  const [subtaskIdx, setSubtaskIdx] = useState(0)
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
+  const [addingSubtask, setAddingSubtask] = useState(false)
+
+  const subtaskCounts = getAllSubtaskCounts()
 
   const didConsume = useRef(false)
   useEffect(() => {
@@ -137,15 +152,47 @@ export function TasksView() {
 
     if (inputFocused) return
 
+    if (view === "task_detail" && detailTask) {
+      const subs = getSubtasks(detailTask.id)
+      switch (key.name) {
+        case "up": setSubtaskIdx((i) => Math.max(0, i - 1)); break
+        case "down": setSubtaskIdx((i) => Math.min(subs.length - 1, i + 1)); break
+        case "return":
+          if (subs[subtaskIdx]) { toggleSubtask(subs[subtaskIdx].id); bump() }
+          break
+        case "s":
+          setNewSubtaskTitle(""); setAddingSubtask(true); setInputFocused(true)
+          break
+        case "x":
+          if (subs[subtaskIdx]) { deleteSubtask(subs[subtaskIdx].id); setSubtaskIdx(Math.max(0, subtaskIdx - 1)); bump() }
+          break
+        case "escape": setView("list"); setDetailTask(null); break
+      }
+      return
+    }
+
     if (view === "list") {
       switch (key.name) {
         case "up": setSelectedIndex((i) => Math.max(0, i - 1)); break
         case "down": setSelectedIndex((i) => Math.min(allTasks.length - 1, i + 1)); break
+        case "return":
+          if (allTasks[selectedIndex]) {
+            setDetailTask(allTasks[selectedIndex]); setSubtaskIdx(0)
+            setAddingSubtask(false); setView("task_detail")
+          }
+          break
         case "n":
           setNewTitle(""); setNewDesc(""); setNewPriority("none")
           setNewStatusIdx(statuses.length > 1 ? 1 : 0)
           setNewProjectIdx(0); setNewStep(0)
           setView("new_task"); setInputFocused(true)
+          break
+        case "s":
+          if (allTasks[selectedIndex]) {
+            setDetailTask(allTasks[selectedIndex]); setSubtaskIdx(0)
+            setNewSubtaskTitle(""); setAddingSubtask(true)
+            setView("task_detail"); setInputFocused(true)
+          }
           break
         case "e":
           if (allTasks[selectedIndex]) {
@@ -158,20 +205,20 @@ export function TasksView() {
         case "k": setView("kanban"); setKanbanCol(0); setKanbanRow(0); break
         case "m": setView("manage_statuses"); setSelectedIndex(0); break
         case "x":
-          if (allTasks[selectedIndex]) { deleteTask(allTasks[selectedIndex].id); setSelectedIndex(Math.max(0, selectedIndex - 1)) }
+          if (allTasks[selectedIndex]) { deleteTask(allTasks[selectedIndex].id); setSelectedIndex(Math.max(0, selectedIndex - 1)); bump() }
           break
         case "right":
           if (allTasks[selectedIndex]) {
             const t = allTasks[selectedIndex]
             const curIdx = statuses.findIndex((s) => s.id === t.status_id)
-            if (curIdx < statuses.length - 1) moveTask(t.id, statuses[curIdx + 1].id)
+            if (curIdx < statuses.length - 1) { moveTask(t.id, statuses[curIdx + 1].id); bump() }
           }
           break
         case "left":
           if (allTasks[selectedIndex]) {
             const t = allTasks[selectedIndex]
             const curIdx = statuses.findIndex((s) => s.id === t.status_id)
-            if (curIdx > 0) moveTask(t.id, statuses[curIdx - 1].id)
+            if (curIdx > 0) { moveTask(t.id, statuses[curIdx - 1].id); bump() }
           }
           break
         case "p":
@@ -179,7 +226,7 @@ export function TasksView() {
             const t = allTasks[selectedIndex]
             const pIdx = PRIORITIES.indexOf(t.priority)
             const next = PRIORITIES[(pIdx + 1) % PRIORITIES.length]
-            updateTask(t.id, t.title, t.description, next, t.labels, t.due_date)
+            updateTask(t.id, t.title, t.description, next, t.labels, t.due_date); bump()
           }
           break
         case "f":
@@ -214,13 +261,13 @@ export function TasksView() {
           break
         case "return":
         case ">":
-          if (colTasks[kanbanRow] && kanbanCol < statuses.length - 1) moveTask(colTasks[kanbanRow].id, statuses[kanbanCol + 1].id)
+          if (colTasks[kanbanRow] && kanbanCol < statuses.length - 1) { moveTask(colTasks[kanbanRow].id, statuses[kanbanCol + 1].id); bump() }
           break
         case "<":
-          if (colTasks[kanbanRow] && kanbanCol > 0) moveTask(colTasks[kanbanRow].id, statuses[kanbanCol - 1].id)
+          if (colTasks[kanbanRow] && kanbanCol > 0) { moveTask(colTasks[kanbanRow].id, statuses[kanbanCol - 1].id); bump() }
           break
         case "x":
-          if (colTasks[kanbanRow]) { deleteTask(colTasks[kanbanRow].id); setKanbanRow(Math.max(0, kanbanRow - 1)) }
+          if (colTasks[kanbanRow]) { deleteTask(colTasks[kanbanRow].id); setKanbanRow(Math.max(0, kanbanRow - 1)); bump() }
           break
         case "t":
           if (runningTimer) { stopTimer(runningTimer.id); setRunningTimer(null) }
@@ -248,7 +295,7 @@ export function TasksView() {
           }
           break
         case "x":
-          if (statuses[selectedIndex]) { deleteTaskStatus(statuses[selectedIndex].id); setSelectedIndex(Math.max(0, selectedIndex - 1)) }
+          if (statuses[selectedIndex]) { deleteTaskStatus(statuses[selectedIndex].id); setSelectedIndex(Math.max(0, selectedIndex - 1)); bump() }
           break
         case "escape": setView("list"); break
       }
@@ -422,6 +469,65 @@ export function TasksView() {
     )
   }
 
+  if (view === "task_detail" && detailTask) {
+    const subs = getSubtasks(detailTask.id)
+    const status = statuses.find((s) => s.id === detailTask.status_id)
+    const project = detailTask.project_id ? projects.find((p) => p.id === detailTask.project_id) : null
+    const pi = PRIORITY_ICONS[detailTask.priority]
+    const completed = subs.filter((s) => s.is_completed).length
+
+    if (addingSubtask) {
+      return (
+        <box style={{ flexDirection: "column", gap: 1 }}>
+          <text fg="#7aa2f7"><strong>{detailTask.title}</strong> — Add Subtask</text>
+          <box style={{ flexDirection: "row", gap: 1 }}>
+            <text fg="#565f89">Subtask:</text>
+            <input placeholder="What needs to be done?" value={newSubtaskTitle} onInput={setNewSubtaskTitle} onSubmit={() => {
+              if (newSubtaskTitle.trim()) createSubtask(detailTask.id, newSubtaskTitle.trim())
+              setNewSubtaskTitle(""); setAddingSubtask(false); setInputFocused(false)
+            }} focused style={{ width: 40 }} />
+          </box>
+          <text fg="#414868">Enter to add, ESC to cancel</text>
+        </box>
+      )
+    }
+
+    return (
+      <box style={{ flexDirection: "column", gap: 1 }}>
+        <box style={{ flexDirection: "row", gap: 1 }}>
+          {status && <text fg={status.color}>{PROGRESS_ICONS[status.progress]}</text>}
+          <text fg="#7aa2f7"><strong>{detailTask.title}</strong></text>
+          {detailTask.priority !== "none" && <text fg={pi.color}>{pi.icon}</text>}
+          {status && <text fg={status.color}>{status.name}</text>}
+        </box>
+        {detailTask.description && <text fg="#e2e8f0">{detailTask.description}</text>}
+        <box style={{ flexDirection: "row", gap: 2 }}>
+          {project && <text fg="#414868">Project: {project.name}</text>}
+          {detailTask.labels && <text fg="#414868">Labels: {detailTask.labels}</text>}
+          {detailTask.due_date && <text fg="#565f89">Due: {detailTask.due_date}</text>}
+        </box>
+
+        <box style={{ height: 1 }} />
+        <text fg="#bb9af7"><strong>Subtasks</strong> <span fg="#565f89">({completed}/{subs.length})</span></text>
+        <text fg="#565f89">[S] Add [Enter] Toggle [X] Delete [ESC] Back</text>
+
+        {subs.length === 0 ? (
+          <text fg="#414868">No subtasks yet — press S to add</text>
+        ) : (
+          <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>
+            {subs.map((sub, idx) => (
+              <box key={sub.id} style={{ flexDirection: "row", gap: 1 }}>
+                <text fg={idx === subtaskIdx ? "#7aa2f7" : "#414868"}>{idx === subtaskIdx ? "▸" : " "}</text>
+                <text fg={sub.is_completed ? "#16c79a" : "#565f89"}>{sub.is_completed ? "✓" : "○"}</text>
+                <text fg={sub.is_completed ? "#414868" : "#e2e8f0"}>{sub.title}</text>
+              </box>
+            ))}
+          </box>
+        )}
+      </box>
+    )
+  }
+
   if (view === "manage_statuses") {
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>
@@ -476,6 +582,11 @@ export function TasksView() {
                           <text fg={isSelected ? "#7aa2f7" : "#414868"}>{isSelected ? "▸" : " "}</text>
                           {task.priority !== "none" && <text fg={pi.color}>{pi.icon}</text>}
                           <text fg={isSelected ? "#e2e8f0" : "#565f89"}>{task.title}</text>
+                          {(() => {
+                            const sc = subtaskCounts.get(task.id)
+                            if (!sc || sc.total === 0) return null
+                            return <text fg={sc.completed === sc.total ? "#16c79a" : "#bb9af7"}>[{sc.completed}/{sc.total}]</text>
+                          })()}
                         </box>
                         {proj && <text fg="#414868" style={{ paddingLeft: 3 }}>[{proj.name}]</text>}
                       </box>
@@ -499,7 +610,7 @@ export function TasksView() {
         <text fg="#bb9af7">[{filterLabel}]</text>
         {runningTimer && <text fg="#f39c12">Timer: {formatDuration(elapsed)} ({runningTimer.description})</text>}
       </box>
-      <text fg="#565f89">[N] New [E] Edit [K] Kanban [M] Statuses [X] Del [P] Priority [F] Filter [T] Timer [left/right] Move</text>
+      <text fg="#565f89">[N] New [Enter] Detail [E] Edit [S] Subtask [K] Kanban [M] Statuses [X] Del [P] Priority [F] Filter [T] Timer</text>
       {allTasks.length === 0 ? <EmptyState message="No tasks yet" hint="Press 'N' to create a task" /> : (
         <scrollbox style={{ flexGrow: 1, borderStyle: "single", borderColor: "#292e42", padding: 1 }} viewportCulling>
           {allTasks.map((task, idx) => {
@@ -513,6 +624,12 @@ export function TasksView() {
                 {status && <text fg={status.color}>{PROGRESS_ICONS[status.progress]}</text>}
                 {task.priority !== "none" && <text fg={pi.color}>{pi.icon}</text>}
                 <text fg={isDone ? "#414868" : "#e2e8f0"}>{isDone ? "✓ " : ""}{task.title}</text>
+                {(() => {
+                  const sc = subtaskCounts.get(task.id)
+                  if (!sc || sc.total === 0) return null
+                  const allDone = sc.completed === sc.total
+                  return <text fg={allDone ? "#16c79a" : "#bb9af7"}>[{sc.completed}/{sc.total}]</text>
+                })()}
                 {status && <text fg={status.color}>{status.name}</text>}
                 {project && <text fg="#414868">[{project.name}]</text>}
                 {task.labels && <text fg="#414868">{task.labels}</text>}

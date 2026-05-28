@@ -33,6 +33,8 @@ export function LiabilitiesOverview() {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [inputFocused, setInputFocused] = useState(false)
   const [tab, setTab] = useState<"cards" | "loans">("cards")
+  const [, setDataVer] = useState(0)
+  const bump = () => setDataVer((v) => v + 1)
 
   const cards = getCreditCardDebts()
   const loans = getLoans()
@@ -117,7 +119,7 @@ export function LiabilitiesOverview() {
         case "x":
           if (tab === "cards" && cards[selectedIndex]) deleteCreditCardDebt(cards[selectedIndex].id)
           else if (tab === "loans" && loans[selectedIndex]) deleteLoan(loans[selectedIndex].id)
-          setSelectedIndex(0)
+          setSelectedIndex(0); bump()
           break
       }
     } else if (view === "schedule") {

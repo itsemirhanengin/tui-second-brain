@@ -125,7 +125,58 @@ export function setTaskProject(id: number, projectId: number | null): void {
 }
 
 export function deleteTask(id: number): void {
+  db.run("DELETE FROM subtasks WHERE task_id = ?", [id])
   db.run("DELETE FROM tasks WHERE id = ?", [id])
+}
+
+// --- Subtasks ---
+
+export interface Subtask {
+  id: number
+  task_id: number
+  title: string
+  is_completed: number
+  position: number
+  created_at: string
+}
+
+export interface SubtaskProgress {
+  total: number
+  completed: number
+}
+
+export function getSubtasks(taskId: number): Subtask[] {
+  return db.query("SELECT * FROM subtasks WHERE task_id = ? ORDER BY position, id").all(taskId) as Subtask[]
+}
+
+export function createSubtask(taskId: number, title: string): Subtask {
+  const maxPos = db.query("SELECT COALESCE(MAX(position), -1) as m FROM subtasks WHERE task_id = ?").get(taskId) as { m: number }
+  const result = db.prepare("INSERT INTO subtasks (task_id, title, position) VALUES (?, ?, ?)").run(taskId, title, maxPos.m + 1)
+  return db.query("SELECT * FROM subtasks WHERE id = ?").get(Number(result.lastInsertRowid)) as Subtask
+}
+
+export function toggleSubtask(id: number): void {
+  db.run("UPDATE subtasks SET is_completed = CASE WHEN is_completed = 1 THEN 0 ELSE 1 END WHERE id = ?", [id])
+}
+
+export function deleteSubtask(id: number): void {
+  db.run("DELETE FROM subtasks WHERE id = ?", [id])
+}
+
+export function getSubtaskProgress(taskId: number): SubtaskProgress {
+  const row = db.query(
+    "SELECT COUNT(*) as total, COALESCE(SUM(is_completed), 0) as completed FROM subtasks WHERE task_id = ?",
+  ).get(taskId) as { total: number; completed: number }
+  return { total: row.total, completed: row.completed }
+}
+
+export function getAllSubtaskCounts(): Map<number, SubtaskProgress> {
+  const rows = db.query(
+    "SELECT task_id, COUNT(*) as total, COALESCE(SUM(is_completed), 0) as completed FROM subtasks GROUP BY task_id",
+  ).all() as { task_id: number; total: number; completed: number }[]
+  const map = new Map<number, SubtaskProgress>()
+  for (const r of rows) map.set(r.task_id, { total: r.total, completed: r.completed })
+  return map
 }
 
 export function getTaskCountByStatus(projectId?: number): Map<number, number> {

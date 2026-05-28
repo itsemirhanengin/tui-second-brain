@@ -29,10 +29,10 @@
 
 ### Subtasks
 
-- [ ] Add subtasks under any task (nested one level)
-- [ ] Subtask completion auto-updates parent task progress
-- [ ] Display subtask count and completion on task list/kanban cards
-- [ ] Keyboard shortcut to add subtask from task detail
+- [x] Add subtasks under any task (nested one level)
+- [x] Subtask completion auto-updates parent task progress
+- [x] Display subtask count and completion on task list/kanban cards
+- [x] Keyboard shortcut to add subtask from task detail
 
 ### Pomodoro Timer
 

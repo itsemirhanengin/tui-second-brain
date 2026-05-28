@@ -54,6 +54,8 @@ export function BudgetDashboard() {
   const [year] = useState(currentYear())
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [inputFocused, setInputFocused] = useState(false)
+  const [, setDataVer] = useState(0)
+  const bump = () => setDataVer((v) => v + 1)
 
   // Form states
   const [txType, setTxType] = useState<"income" | "expense" | "transfer">("expense")
@@ -160,10 +162,10 @@ export function BudgetDashboard() {
           setView("add_recurring"); setInputFocused(true)
           break
         case "p":
-          if (recs[selectedIndex]) toggleRecurringActive(recs[selectedIndex].id)
+          if (recs[selectedIndex]) { toggleRecurringActive(recs[selectedIndex].id); bump() }
           break
         case "x":
-          if (recs[selectedIndex]) { deleteRecurring(recs[selectedIndex].id); setSelectedIndex(Math.max(0, selectedIndex - 1)) }
+          if (recs[selectedIndex]) { deleteRecurring(recs[selectedIndex].id); setSelectedIndex(Math.max(0, selectedIndex - 1)); bump() }
           break
         case "escape": setView("overview"); break
       }
@@ -175,7 +177,7 @@ export function BudgetDashboard() {
         case "x":
           if (transactions[selectedIndex]) {
             deleteTransaction(transactions[selectedIndex].id)
-            setSelectedIndex(0)
+            setSelectedIndex(0); bump()
           }
           break
         case "escape": setView("overview"); break
@@ -188,7 +190,7 @@ export function BudgetDashboard() {
         case "x":
           if (accounts[selectedIndex]) {
             deleteAccount(accounts[selectedIndex].id)
-            setSelectedIndex(0)
+            setSelectedIndex(0); bump()
           }
           break
         case "escape": setView("overview"); break
@@ -208,7 +210,7 @@ export function BudgetDashboard() {
         case "x":
           if (expenseCategories[selectedIndex]) {
             deleteCategory(expenseCategories[selectedIndex].id)
-            setSelectedIndex(0)
+            setSelectedIndex(0); bump()
           }
           break
         case "escape": setView("overview"); break

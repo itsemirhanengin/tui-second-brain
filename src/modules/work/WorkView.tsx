@@ -76,6 +76,8 @@ export function WorkView({ subView }: { subView: string }) {
   const [manualStep, setManualStep] = useState(0)
 
   const [timerDesc, setTimerDesc] = useState("")
+  const [, setDataVer] = useState(0)
+  const bump = () => setDataVer((v) => v + 1)
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -123,7 +125,7 @@ export function WorkView({ subView }: { subView: string }) {
           if (projects[selectedIndex]) { setActiveProject(projects[selectedIndex]); setView("project_detail") }
           break
         case "x":
-          if (projects[selectedIndex]) { deleteProject(projects[selectedIndex].id); setSelectedIndex(0) }
+          if (projects[selectedIndex]) { deleteProject(projects[selectedIndex].id); setSelectedIndex(0); bump() }
           break
       }
     } else if (view === "clients") {
@@ -132,7 +134,7 @@ export function WorkView({ subView }: { subView: string }) {
         case "down": setSelectedIndex((i) => Math.min(clients.length - 1, i + 1)); break
         case "n": setView("new_client"); setClientStep(0); setClientName(""); setInputFocused(true); break
         case "x":
-          if (clients[selectedIndex]) { deleteClient(clients[selectedIndex].id); setSelectedIndex(0) }
+          if (clients[selectedIndex]) { deleteClient(clients[selectedIndex].id); setSelectedIndex(0); bump() }
           break
       }
     } else if (view === "timetracker") {
@@ -143,14 +145,13 @@ export function WorkView({ subView }: { subView: string }) {
           if (runningTimer) {
             stopTimer(runningTimer.id)
             setRunningTimer(null)
-          } else {
             setTimerDesc("")
             setInputFocused(true)
           }
           break
         case "m": setView("manual_entry"); setManualStep(0); setManualDesc(""); setInputFocused(true); break
         case "x":
-          if (timeEntries[selectedIndex]) { deleteTimeEntry(timeEntries[selectedIndex].id); setSelectedIndex(0) }
+          if (timeEntries[selectedIndex]) { deleteTimeEntry(timeEntries[selectedIndex].id); setSelectedIndex(0); bump() }
           break
       }
     } else if (view === "project_detail") {

@@ -28,6 +28,8 @@ export function RoutinesView({ subView }: { subView: "list" | "stats" }) {
   const [view, setView] = useState<View>(propView)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [inputFocused, setInputFocused] = useState(false)
+  const [, setDataVer] = useState(0)
+  const bump = () => setDataVer((v) => v + 1)
 
   useEffect(() => {
     setView(propView)
@@ -106,10 +108,10 @@ export function RoutinesView({ subView }: { subView: "list" | "stats" }) {
         case "t": setView("today"); setSelectedIndex(0); break
         case "n": setView("new"); setFormStep(0); setInputFocused(true); break
         case "p":
-          if (allRoutines[selectedIndex]) toggleRoutineActive(allRoutines[selectedIndex].id)
+          if (allRoutines[selectedIndex]) { toggleRoutineActive(allRoutines[selectedIndex].id); bump() }
           break
         case "delete":
-          if (allRoutines[selectedIndex]) { deleteRoutine(allRoutines[selectedIndex].id); setSelectedIndex(0) }
+          if (allRoutines[selectedIndex]) { deleteRoutine(allRoutines[selectedIndex].id); setSelectedIndex(0); bump() }
           break
         case "d":
           if (allRoutines[selectedIndex]) {
