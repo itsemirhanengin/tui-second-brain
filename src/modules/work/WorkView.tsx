@@ -390,6 +390,38 @@ export function WorkView({ subView }: { subView: string }) {
     )
   }
 
+  if (view === "clients") {
+    return (
+      <box style={{ flexDirection: "column", gap: 1 }}>
+        <text fg="#7aa2f7"><strong>Clients</strong></text>
+        <text fg="#565f89">[N] New [X] Delete</text>
+
+        {clients.length === 0 ? <EmptyState message="No clients yet" hint="Press 'N' to create" /> : (
+          <scrollbox style={{ flexGrow: 1, borderStyle: "single", borderColor: "#292e42", padding: 1 }} viewportCulling>
+            {clients.map((c, idx) => {
+              const projectCount = projects.filter((p) => p.client_id === c.id).length
+              return (
+                <box key={c.id} style={{ flexDirection: "column", marginBottom: 1 }}>
+                  <box style={{ flexDirection: "row", gap: 1 }}>
+                    <text fg={idx === selectedIndex ? "#7aa2f7" : "#565f89"}>{idx === selectedIndex ? "▸" : " "}</text>
+                    <text fg="#e2e8f0">{c.name}</text>
+                    {!c.is_active && <Badge text="inactive" />}
+                    {c.company && <text fg="#414868">({c.company})</text>}
+                  </box>
+                  <box style={{ paddingLeft: 4, flexDirection: "row", gap: 2 }}>
+                    {c.email && <text fg="#565f89">{c.email}</text>}
+                    {c.hourly_rate > 0 && <text fg="#565f89">{formatCurrency(c.hourly_rate, currency)}/hr</text>}
+                    <text fg="#565f89">{projectCount} project{projectCount !== 1 ? "s" : ""}</text>
+                  </box>
+                </box>
+              )
+            })}
+          </scrollbox>
+        )}
+      </box>
+    )
+  }
+
   // Projects list (default)
   return (
     <box style={{ flexDirection: "column", gap: 1 }}>
