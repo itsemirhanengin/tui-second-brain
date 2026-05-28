@@ -150,7 +150,7 @@ export function Dashboard() {
         )}
       </box>
 
-      <text fg="#414868">D:Dashboard L:Life R:Routines W:Work S:Settings</text>
+      <text fg="#414868">Shift+1..5: Switch modules | Tab: Switch sub-modules | ?: Help</text>
     </box>
   )
 }

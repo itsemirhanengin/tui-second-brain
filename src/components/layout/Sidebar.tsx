@@ -5,55 +5,55 @@ interface SidebarProps {
 }
 
 interface MenuItem {
-  key: string
+  shortcut: string
   label: string
   module: MainModule
   subModule?: SubModule
-  children?: { key: string; label: string; subModule: SubModule }[]
+  children?: { label: string; subModule: SubModule }[]
 }
 
 const MENU: MenuItem[] = [
-  { key: "D", label: "Dashboard", module: "dashboard" },
+  { shortcut: "⇧1", label: "Dashboard", module: "dashboard" },
   {
-    key: "L",
+    shortcut: "⇧2",
     label: "Life",
     module: "life",
     subModule: "water",
     children: [
-      { key: "1", label: "Water Tracker", subModule: "water" },
-      { key: "2", label: "Notes", subModule: "notes" },
-      { key: "3", label: "Budget", subModule: "budget" },
-      { key: "4", label: "Liabilities", subModule: "liabilities" },
+      { label: "Water Tracker", subModule: "water" },
+      { label: "Notes", subModule: "notes" },
+      { label: "Budget", subModule: "budget" },
+      { label: "Liabilities", subModule: "liabilities" },
     ],
   },
   {
-    key: "R",
+    shortcut: "⇧3",
     label: "Routines",
     module: "routines",
     subModule: "list",
     children: [
-      { key: "1", label: "My Routines", subModule: "list" },
-      { key: "2", label: "Statistics", subModule: "stats" },
+      { label: "My Routines", subModule: "list" },
+      { label: "Statistics", subModule: "stats" },
     ],
   },
   {
-    key: "W",
+    shortcut: "⇧4",
     label: "Work",
     module: "work",
     subModule: "projects",
     children: [
-      { key: "1", label: "Projects", subModule: "projects" },
-      { key: "2", label: "Clients", subModule: "clients" },
-      { key: "3", label: "Time Tracker", subModule: "timetracker" },
-      { key: "4", label: "Overview", subModule: "workdashboard" },
+      { label: "Projects", subModule: "projects" },
+      { label: "Clients", subModule: "clients" },
+      { label: "Time Tracker", subModule: "timetracker" },
+      { label: "Overview", subModule: "workdashboard" },
     ],
   },
-  { key: "S", label: "Settings", module: "settings", subModule: "general" },
+  { shortcut: "⇧5", label: "Settings", module: "settings", subModule: "general" },
 ]
 
 export function Sidebar({ nav }: SidebarProps) {
   return (
-    <box style={{ width: 24, flexDirection: "column", backgroundColor: "#1a1b26", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>
+    <box style={{ width: 26, flexDirection: "column", backgroundColor: "#1a1b26", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>
       <text fg="#7aa2f7">
         <strong>MENU</strong>
       </text>
@@ -61,22 +61,23 @@ export function Sidebar({ nav }: SidebarProps) {
       {MENU.map((item) => {
         const isActive = nav.module === item.module
         return (
-          <box key={item.key} style={{ flexDirection: "column" }}>
+          <box key={item.shortcut} style={{ flexDirection: "column" }}>
             <text fg={isActive ? "#7aa2f7" : "#565f89"}>
               {isActive ? "▸ " : "  "}
-              [{item.key}] {item.label}
+              {item.shortcut} {item.label}
             </text>
             {isActive && item.children && (
               <box style={{ flexDirection: "column", paddingLeft: 4 }}>
                 {item.children.map((child) => {
                   const isSubActive = nav.subModule === child.subModule
                   return (
-                    <text key={child.key} fg={isSubActive ? "#bb9af7" : "#414868"}>
+                    <text key={child.label} fg={isSubActive ? "#bb9af7" : "#414868"}>
                       {isSubActive ? "▹ " : "  "}
                       {child.label}
                     </text>
                   )
                 })}
+                <text fg="#414868">  Tab to switch</text>
               </box>
             )}
           </box>

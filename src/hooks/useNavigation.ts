@@ -14,6 +14,13 @@ export interface NavigationState {
   viewStack: string[]
 }
 
+const SUB_MODULES: Record<string, SubModule[]> = {
+  life: ["water", "notes", "budget", "liabilities"],
+  routines: ["list", "stats"],
+  work: ["projects", "clients", "timetracker", "workdashboard"],
+  settings: ["general", "water", "export"],
+}
+
 export function useNavigation() {
   const [state, setState] = useState<NavigationState>({
     module: "dashboard",
@@ -45,6 +52,16 @@ export function useNavigation() {
     })
   }, [])
 
+  const cycleSubModule = useCallback((direction: 1 | -1) => {
+    setState((prev) => {
+      const subs = SUB_MODULES[prev.module]
+      if (!subs || subs.length === 0) return prev
+      const currentIdx = subs.indexOf(prev.subModule as SubModule)
+      const nextIdx = (currentIdx + direction + subs.length) % subs.length
+      return { ...prev, subModule: subs[nextIdx], viewStack: [] }
+    })
+  }, [])
+
   const currentView = state.viewStack[state.viewStack.length - 1] ?? null
 
   return {
@@ -54,6 +71,7 @@ export function useNavigation() {
     setSubModule,
     pushView,
     popView,
+    cycleSubModule,
   }
 }
 

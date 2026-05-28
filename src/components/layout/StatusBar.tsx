@@ -24,7 +24,7 @@ export function StatusBar({ message }: StatusBarProps) {
 
   return (
     <box style={{ height: 1, backgroundColor: "#1a1b26", paddingLeft: 1, paddingRight: 1, flexDirection: "row", justifyContent: "space-between", width: "100%" }}>
-      <text fg="#565f89">{message ?? "D:Dashboard L:Life R:Routines W:Work S:Settings ESC:Back"}</text>
+      <text fg="#565f89">{message ?? "⇧1..5: Navigate | Tab: Sub-module | ESC: Back | ?: Help"}</text>
       {timerText && <text fg="#f39c12">{timerText}</text>}
     </box>
   )
