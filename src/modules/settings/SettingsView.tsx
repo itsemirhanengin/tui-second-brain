@@ -6,10 +6,13 @@ import { exportToJson, exportAllCsv } from "../../utils/export"
 import { DATA_DIR } from "../../db/connection"
 import { homedir } from "os"
 import { join } from "path"
+import { useTheme } from "../../hooks/useTheme"
+import { THEMES, THEME_KEYS, type Theme } from "../../utils/themes"
 
 type View = "general" | "water" | "budget" | "export"
 
 export function SettingsView({ subView }: { subView: string }) {
+  const theme = useTheme()
   const propView = (subView === "water" ? "water" : subView === "budget" ? "budget" : subView === "export" ? "export" : "general") as View
   const [view, setView] = useState<View>(propView)
 
@@ -18,14 +21,33 @@ export function SettingsView({ subView }: { subView: string }) {
     setInputFocused(false)
     setEditField("")
   }, [propView])
+
   const [inputFocused, setInputFocused] = useState(false)
   const [editField, setEditField] = useState("")
   const [editValue, setEditValue] = useState("")
   const [exportMessage, setExportMessage] = useState("")
+  const [themeIdx, setThemeIdx] = useState(0)
+  const [pickingTheme, setPickingTheme] = useState(false)
 
   const settings = getAllSettings()
+  const currentThemeKey = settings.theme ?? "tokyo_night"
 
   useKeyboard((key) => {
+    if (pickingTheme) {
+      switch (key.name) {
+        case "up": setThemeIdx((i) => Math.max(0, i - 1)); break
+        case "down": setThemeIdx((i) => Math.min(THEME_KEYS.length - 1, i + 1)); break
+        case "return":
+          setSetting("theme", THEME_KEYS[themeIdx])
+          setPickingTheme(false)
+          break
+        case "escape":
+          setPickingTheme(false)
+          break
+      }
+      return
+    }
+
     if (inputFocused) return
 
     if (key.name === "escape") {
@@ -49,6 +71,10 @@ export function SettingsView({ subView }: { subView: string }) {
           setEditField("time_format")
           setEditValue(settings.time_format ?? "24h")
           setInputFocused(true)
+          break
+        case "h":
+          setThemeIdx(THEME_KEYS.indexOf(currentThemeKey) >= 0 ? THEME_KEYS.indexOf(currentThemeKey) : 0)
+          setPickingTheme(true)
           break
       }
     } else if (view === "water") {
@@ -78,6 +104,39 @@ export function SettingsView({ subView }: { subView: string }) {
     }
   })
 
+  if (pickingTheme) {
+    return (
+      <box style={{ flexDirection: "column", gap: 1 }}>
+        <text fg={theme.primary}><strong>Select Theme</strong></text>
+        <text fg={theme.textSecondary}>Up/Down to browse, Enter to apply, ESC to cancel</text>
+        <box style={{ height: 1 }} />
+        {THEME_KEYS.map((key, idx) => {
+          const t = THEMES[key]
+          const isSelected = idx === themeIdx
+          const isCurrent = key === currentThemeKey
+          return (
+            <box key={key} style={{ flexDirection: "row", gap: 1 }}>
+              <text fg={isSelected ? theme.primary : theme.textSecondary}>
+                {isSelected ? "▸ " : "  "}
+              </text>
+              <text fg={t.primary}>{t.name}</text>
+              {isCurrent && <text fg={theme.success}>(current)</text>}
+              <box style={{ flexDirection: "row", gap: 0 }}>
+                <text bg={t.bg} fg={t.text}> Aa </text>
+                <text bg={t.bgCard} fg={t.primary}> ■ </text>
+                <text bg={t.bgCard} fg={t.secondary}> ■ </text>
+                <text bg={t.bgCard} fg={t.accent}> ■ </text>
+                <text bg={t.bgCard} fg={t.success}> ■ </text>
+                <text bg={t.bgCard} fg={t.error}> ■ </text>
+                <text bg={t.bgCard} fg={t.warning}> ■ </text>
+              </box>
+            </box>
+          )
+        })}
+      </box>
+    )
+  }
+
   if (editField) {
     const labels: Record<string, string> = {
       currency: "Currency (TRY/USD/EUR/GBP):",
@@ -87,9 +146,9 @@ export function SettingsView({ subView }: { subView: string }) {
     }
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>
-        <text fg="#7aa2f7"><strong>Edit Setting</strong></text>
+        <text fg={theme.primary}><strong>Edit Setting</strong></text>
         <box style={{ flexDirection: "row", gap: 1 }}>
-          <text fg="#565f89">{labels[editField] ?? editField}</text>
+          <text fg={theme.textSecondary}>{labels[editField] ?? editField}</text>
           <input value={editValue} onInput={setEditValue} onSubmit={() => {
             if (editField === "water_goal") {
               const val = Number(editValue)
@@ -101,55 +160,59 @@ export function SettingsView({ subView }: { subView: string }) {
             setInputFocused(false)
           }} focused style={{ width: 20 }} />
         </box>
-        <text fg="#414868">Enter to save, ESC to cancel</text>
+        <text fg={theme.textMuted}>Enter to save, ESC to cancel</text>
       </box>
     )
   }
 
   return (
     <box style={{ flexDirection: "column", gap: 1 }}>
-      <text fg="#7aa2f7"><strong>Settings</strong></text>
+      <text fg={theme.primary}><strong>Settings</strong></text>
 
       <box style={{ flexDirection: "row", gap: 2 }}>
-        <text fg={view === "general" ? "#7aa2f7" : "#565f89"} >General</text>
-        <text fg={view === "water" ? "#7aa2f7" : "#565f89"}>Water</text>
-        <text fg={view === "export" ? "#7aa2f7" : "#565f89"}>Export</text>
+        <text fg={view === "general" ? theme.primary : theme.textSecondary}>General</text>
+        <text fg={view === "water" ? theme.primary : theme.textSecondary}>Water</text>
+        <text fg={view === "export" ? theme.primary : theme.textSecondary}>Export</text>
       </box>
 
       {view === "general" && (
-        <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1, gap: 1 }}>
+        <box style={{ flexDirection: "column", borderStyle: "single", borderColor: theme.border, padding: 1, gap: 1 }}>
           <box style={{ flexDirection: "row", gap: 1 }}>
-            <text fg="#565f89">[C] Currency:</text>
-            <text fg="#e2e8f0">{settings.currency ?? "TRY"}</text>
+            <text fg={theme.textSecondary}>[C] Currency:</text>
+            <text fg={theme.text}>{settings.currency ?? "TRY"}</text>
           </box>
           <box style={{ flexDirection: "row", gap: 1 }}>
-            <text fg="#565f89">[D] Date Format:</text>
-            <text fg="#e2e8f0">{settings.date_format ?? "YYYY-MM-DD"}</text>
+            <text fg={theme.textSecondary}>[D] Date Format:</text>
+            <text fg={theme.text}>{settings.date_format ?? "YYYY-MM-DD"}</text>
           </box>
           <box style={{ flexDirection: "row", gap: 1 }}>
-            <text fg="#565f89">[T] Time Format:</text>
-            <text fg="#e2e8f0">{settings.time_format ?? "24h"}</text>
+            <text fg={theme.textSecondary}>[T] Time Format:</text>
+            <text fg={theme.text}>{settings.time_format ?? "24h"}</text>
+          </box>
+          <box style={{ flexDirection: "row", gap: 1 }}>
+            <text fg={theme.textSecondary}>[H] Theme:</text>
+            <text fg={theme.primary}>{THEMES[currentThemeKey]?.name ?? currentThemeKey}</text>
           </box>
           <box style={{ height: 1 }} />
-          <text fg="#414868">Data stored at: {DATA_DIR}</text>
+          <text fg={theme.textMuted}>Data stored at: {DATA_DIR}</text>
         </box>
       )}
 
       {view === "water" && (
-        <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1, gap: 1 }}>
+        <box style={{ flexDirection: "column", borderStyle: "single", borderColor: theme.border, padding: 1, gap: 1 }}>
           <box style={{ flexDirection: "row", gap: 1 }}>
-            <text fg="#565f89">[G] Daily Goal:</text>
-            <text fg="#e2e8f0">{getWaterGoal()}ml</text>
+            <text fg={theme.textSecondary}>[G] Daily Goal:</text>
+            <text fg={theme.text}>{getWaterGoal()}ml</text>
           </box>
         </box>
       )}
 
       {view === "export" && (
-        <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1, gap: 1 }}>
-          <text fg="#e2e8f0">Export your data to Desktop:</text>
-          <text fg="#565f89">[J] Export as JSON (all data in one file)</text>
-          <text fg="#565f89">[V] Export as CSV (one file per table)</text>
-          {exportMessage && <text fg="#16c79a">{exportMessage}</text>}
+        <box style={{ flexDirection: "column", borderStyle: "single", borderColor: theme.border, padding: 1, gap: 1 }}>
+          <text fg={theme.text}>Export your data to Desktop:</text>
+          <text fg={theme.textSecondary}>[J] Export as JSON (all data in one file)</text>
+          <text fg={theme.textSecondary}>[V] Export as CSV (one file per table)</text>
+          {exportMessage && <text fg={theme.success}>{exportMessage}</text>}
         </box>
       )}
     </box>

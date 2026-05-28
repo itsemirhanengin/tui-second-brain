@@ -29,12 +29,14 @@ import {
 import { getCurrency } from "../settings/settingsStore"
 import { formatCurrency } from "../../utils/currency"
 import { formatDuration, daysUntil, formatDate } from "../../utils/date"
+import { TasksView } from "./TasksView"
+import { getTasks, getTaskStatuses, getTaskCountByStatus, getTasksByStatus, PROGRESS_ICONS, type Task } from "./taskStore"
 
-type View = "projects" | "clients" | "timetracker" | "dashboard" | "new_project" | "new_client" | "manual_entry" | "project_detail"
+type View = "projects" | "clients" | "tasks" | "timetracker" | "dashboard" | "new_project" | "new_client" | "manual_entry" | "project_detail"
 
 export function WorkView({ subView }: { subView: string }) {
   const currency = getCurrency()
-  const propView = (subView === "clients" ? "clients" : subView === "timetracker" ? "timetracker" : subView === "workdashboard" ? "dashboard" : "projects") as View
+  const propView = (subView === "clients" ? "clients" : subView === "tasks" ? "tasks" : subView === "timetracker" ? "timetracker" : subView === "projects" ? "projects" : "dashboard") as View
   const [view, setView] = useState<View>(propView)
 
   useEffect(() => {
@@ -220,12 +222,18 @@ export function WorkView({ subView }: { subView: string }) {
     )
   }
 
+  if (view === "tasks") {
+    return <TasksView />
+  }
+
   if (view === "project_detail" && activeProject) {
     const totalMin = getProjectTotalMinutes(activeProject.id)
     const billable = getProjectBillable(activeProject.id)
-    const entries = getTimeEntries(activeProject.id, 20)
+    const entries = getTimeEntries(activeProject.id, 10)
     const client = activeProject.client_id ? getClientById(activeProject.client_id) : null
     const daysLeft = activeProject.deadline ? daysUntil(activeProject.deadline) : null
+    const projectTasks = getTasks(activeProject.id)
+    const statuses = getTaskStatuses()
 
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>
@@ -251,18 +259,41 @@ export function WorkView({ subView }: { subView: string }) {
             <text fg="#565f89">Billable</text>
             <CurrencyDisplay amount={billable} currency={currency} />
           </box>
+          <box style={{ flexDirection: "column" }}>
+            <text fg="#565f89">Tasks</text>
+            <text fg="#e2e8f0">{projectTasks.length}</text>
+          </box>
         </box>
 
-        <text fg="#565f89">Recent Time Entries:</text>
-        <scrollbox style={{ flexGrow: 1, borderStyle: "single", borderColor: "#292e42", padding: 1 }} viewportCulling>
-          {entries.length === 0 ? <text fg="#414868">No time entries</text> : entries.map((e) => (
-            <box key={e.id} style={{ flexDirection: "row", gap: 1 }}>
-              <text fg="#565f89">{e.start_time.substring(0, 16)}</text>
-              <text fg="#e2e8f0">{e.duration_minutes ? formatDuration(e.duration_minutes) : "running"}</text>
-              <text fg="#414868">{e.description || "—"}</text>
-            </box>
-          ))}
-        </scrollbox>
+        {projectTasks.length > 0 && (
+          <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>
+            <text fg="#565f89">Tasks:</text>
+            {projectTasks.slice(0, 10).map((task) => {
+              const st = statuses.find((s) => s.id === task.status_id)
+              return (
+                <box key={task.id} style={{ flexDirection: "row", gap: 1 }}>
+                  {st && <text fg={st.color}>{PROGRESS_ICONS[st.progress]}</text>}
+                  <text fg={st?.progress === "full" ? "#414868" : "#e2e8f0"}>{task.title}</text>
+                  {st && <text fg={st.color}>{st.name}</text>}
+                </box>
+              )
+            })}
+            {projectTasks.length > 10 && <text fg="#414868">...and {projectTasks.length - 10} more</text>}
+          </box>
+        )}
+
+        {entries.length > 0 && (
+          <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>
+            <text fg="#565f89">Recent Time Entries:</text>
+            {entries.map((e) => (
+              <box key={e.id} style={{ flexDirection: "row", gap: 1 }}>
+                <text fg="#565f89">{e.start_time.substring(0, 16)}</text>
+                <text fg="#e2e8f0">{e.duration_minutes ? formatDuration(e.duration_minutes) : "running"}</text>
+                <text fg="#414868">{e.description || "—"}</text>
+              </box>
+            ))}
+          </box>
+        )}
         <text fg="#414868">ESC to go back</text>
       </box>
     )
@@ -334,10 +365,23 @@ export function WorkView({ subView }: { subView: string }) {
     const todayMin = getTodayTotalMinutes()
     const weekMin = getWeekTotalMinutes()
     const activeProjects = projects.filter((p) => p.status === "active")
+    const allTasksList = getTasks()
+    const statuses = getTaskStatuses()
+    const taskCountMap = getTaskCountByStatus()
+    const totalTasks = allTasksList.length
+    const doneTasks = statuses.filter((s) => s.progress === "full").reduce((sum, s) => sum + (taskCountMap.get(s.id) ?? 0), 0)
+    const inProgressTasks = statuses.filter((s) => s.progress === "half" || s.progress === "quarter" || s.progress === "three_quarter").reduce((sum, s) => sum + (taskCountMap.get(s.id) ?? 0), 0)
 
     return (
       <box style={{ flexDirection: "column", gap: 1 }}>
         <text fg="#7aa2f7"><strong>Work Overview</strong></text>
+
+        {runningTimer && (
+          <box style={{ borderStyle: "rounded", borderColor: "#f39c12", padding: 1 }}>
+            <text fg="#f39c12">Timer Running: {formatDuration(elapsed)} — {runningTimer.description || "No description"}</text>
+          </box>
+        )}
+
         <box style={{ flexDirection: "row", gap: 3, borderStyle: "rounded", borderColor: "#292e42", padding: 1 }}>
           <box style={{ flexDirection: "column" }}>
             <text fg="#565f89">Today</text>
@@ -348,13 +392,38 @@ export function WorkView({ subView }: { subView: string }) {
             <text fg="#e2e8f0">{formatDuration(weekMin)}</text>
           </box>
           <box style={{ flexDirection: "column" }}>
-            <text fg="#565f89">Active Projects</text>
-            <text fg="#e2e8f0">{activeProjects.length}</text>
+            <text fg="#565f89">Projects</text>
+            <text fg="#e2e8f0">{activeProjects.length} active</text>
           </box>
           <box style={{ flexDirection: "column" }}>
             <text fg="#565f89">Clients</text>
             <text fg="#e2e8f0">{clients.filter((c) => c.is_active).length}</text>
           </box>
+        </box>
+
+        <box style={{ flexDirection: "row", gap: 3, borderStyle: "rounded", borderColor: "#292e42", padding: 1 }}>
+          <box style={{ flexDirection: "column" }}>
+            <text fg="#565f89">Total Tasks</text>
+            <text fg="#e2e8f0">{totalTasks}</text>
+          </box>
+          <box style={{ flexDirection: "column" }}>
+            <text fg="#565f89">In Progress</text>
+            <text fg="#f39c12">{inProgressTasks}</text>
+          </box>
+          <box style={{ flexDirection: "column" }}>
+            <text fg="#565f89">Done</text>
+            <text fg="#16c79a">{doneTasks}</text>
+          </box>
+          {statuses.map((s) => {
+            const cnt = taskCountMap.get(s.id) ?? 0
+            if (cnt === 0) return null
+            return (
+              <box key={s.id} style={{ flexDirection: "column" }}>
+                <text fg="#565f89">{PROGRESS_ICONS[s.progress]} {s.name}</text>
+                <text fg={s.color}>{cnt}</text>
+              </box>
+            )
+          })}
         </box>
 
         {activeProjects.length > 0 && (
@@ -364,12 +433,14 @@ export function WorkView({ subView }: { subView: string }) {
               const totalMin = getProjectTotalMinutes(p.id)
               const billable = getProjectBillable(p.id)
               const client = p.client_id ? getClientById(p.client_id) : null
+              const pTasks = getTasks(p.id)
               return (
                 <box key={p.id} style={{ flexDirection: "row", gap: 1 }}>
                   <text fg="#e2e8f0">{p.name}</text>
                   {client && <text fg="#414868">({client.name})</text>}
                   <text fg="#565f89">{formatDuration(totalMin)}</text>
                   {billable > 0 && <CurrencyDisplay amount={billable} currency={currency} />}
+                  <text fg="#414868">{pTasks.length} tasks</text>
                   {p.deadline && (
                     <text fg={daysUntil(p.deadline) < 0 ? "#e94560" : "#565f89"}>
                       Due: {p.deadline}
@@ -378,12 +449,6 @@ export function WorkView({ subView }: { subView: string }) {
                 </box>
               )
             })}
-          </box>
-        )}
-
-        {runningTimer && (
-          <box style={{ borderStyle: "rounded", borderColor: "#f39c12", padding: 1 }}>
-            <text fg="#f39c12">Timer: {formatDuration(elapsed)} — {runningTimer.description || "No description"}</text>
           </box>
         )}
       </box>
@@ -399,7 +464,8 @@ export function WorkView({ subView }: { subView: string }) {
         {clients.length === 0 ? <EmptyState message="No clients yet" hint="Press 'N' to create" /> : (
           <scrollbox style={{ flexGrow: 1, borderStyle: "single", borderColor: "#292e42", padding: 1 }} viewportCulling>
             {clients.map((c, idx) => {
-              const projectCount = projects.filter((p) => p.client_id === c.id).length
+              const clientProjects = projects.filter((p) => p.client_id === c.id)
+              const clientTaskCount = clientProjects.reduce((sum, p) => sum + getTasks(p.id).length, 0)
               return (
                 <box key={c.id} style={{ flexDirection: "column", marginBottom: 1 }}>
                   <box style={{ flexDirection: "row", gap: 1 }}>
@@ -411,8 +477,21 @@ export function WorkView({ subView }: { subView: string }) {
                   <box style={{ paddingLeft: 4, flexDirection: "row", gap: 2 }}>
                     {c.email && <text fg="#565f89">{c.email}</text>}
                     {c.hourly_rate > 0 && <text fg="#565f89">{formatCurrency(c.hourly_rate, currency)}/hr</text>}
-                    <text fg="#565f89">{projectCount} project{projectCount !== 1 ? "s" : ""}</text>
+                    <text fg="#565f89">{clientProjects.length} project{clientProjects.length !== 1 ? "s" : ""}</text>
+                    <text fg="#565f89">{clientTaskCount} task{clientTaskCount !== 1 ? "s" : ""}</text>
                   </box>
+                  {clientProjects.length > 0 && (
+                    <box style={{ paddingLeft: 4, flexDirection: "column" }}>
+                      {clientProjects.map((p) => (
+                        <box key={p.id} style={{ flexDirection: "row", gap: 1 }}>
+                          <text fg="#414868">└</text>
+                          <text fg="#565f89">{p.name}</text>
+                          <Badge text={p.status} />
+                          <text fg="#414868">{getTasks(p.id).length} tasks</text>
+                        </box>
+                      ))}
+                    </box>
+                  )}
                 </box>
               )
             })}

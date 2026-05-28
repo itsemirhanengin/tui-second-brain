@@ -2,7 +2,7 @@ import { useState, useCallback } from "react"
 
 export type MainModule = "dashboard" | "life" | "routines" | "work" | "settings"
 export type LifeSubModule = "water" | "notes" | "budget" | "liabilities"
-export type WorkSubModule = "projects" | "clients" | "timetracker" | "workdashboard"
+export type WorkSubModule = "projects" | "clients" | "tasks" | "timetracker" | "workdashboard"
 export type RoutineSubModule = "list" | "stats"
 export type SettingsSubModule = "general" | "water" | "budget" | "export"
 
@@ -17,7 +17,7 @@ export interface NavigationState {
 const SUB_MODULES: Record<string, SubModule[]> = {
   life: ["water", "notes", "budget", "liabilities"],
   routines: ["list", "stats"],
-  work: ["projects", "clients", "timetracker", "workdashboard"],
+  work: ["workdashboard", "tasks", "timetracker", "projects", "clients"],
   settings: ["general", "water", "export"],
 }
 

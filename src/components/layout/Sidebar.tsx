@@ -1,4 +1,6 @@
-import type { MainModule, SubModule, Navigation } from "../../hooks/useNavigation"
+import type { Navigation } from "../../hooks/useNavigation"
+import { useTheme } from "../../hooks/useTheme"
+import type { MainModule, SubModule } from "../../hooks/useNavigation"
 
 interface SidebarProps {
   nav: Navigation
@@ -40,21 +42,24 @@ const MENU: MenuItem[] = [
     shortcut: "⇧4",
     label: "Work",
     module: "work",
-    subModule: "projects",
+    subModule: "workdashboard",
     children: [
+      { label: "Overview", subModule: "workdashboard" },
+      { label: "Tasks", subModule: "tasks" },
+      { label: "Time Tracker", subModule: "timetracker" },
       { label: "Projects", subModule: "projects" },
       { label: "Clients", subModule: "clients" },
-      { label: "Time Tracker", subModule: "timetracker" },
-      { label: "Overview", subModule: "workdashboard" },
     ],
   },
   { shortcut: "⇧5", label: "Settings", module: "settings", subModule: "general" },
 ]
 
 export function Sidebar({ nav }: SidebarProps) {
+  const t = useTheme()
+
   return (
-    <box style={{ width: 26, flexDirection: "column", backgroundColor: "#1a1b26", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>
-      <text fg="#7aa2f7">
+    <box style={{ width: 26, flexDirection: "column", backgroundColor: t.bg, borderStyle: "single", borderColor: t.border, padding: 1 }}>
+      <text fg={t.primary}>
         <strong>MENU</strong>
       </text>
       <box style={{ height: 1 }} />
@@ -62,7 +67,7 @@ export function Sidebar({ nav }: SidebarProps) {
         const isActive = nav.module === item.module
         return (
           <box key={item.shortcut} style={{ flexDirection: "column" }}>
-            <text fg={isActive ? "#7aa2f7" : "#565f89"}>
+            <text fg={isActive ? t.primary : t.textSecondary}>
               {isActive ? "▸ " : "  "}
               {item.shortcut} {item.label}
             </text>
@@ -71,13 +76,13 @@ export function Sidebar({ nav }: SidebarProps) {
                 {item.children.map((child) => {
                   const isSubActive = nav.subModule === child.subModule
                   return (
-                    <text key={child.label} fg={isSubActive ? "#bb9af7" : "#414868"}>
+                    <text key={child.label} fg={isSubActive ? t.secondary : t.textMuted}>
                       {isSubActive ? "▹ " : "  "}
                       {child.label}
                     </text>
                   )
                 })}
-                <text fg="#414868">  Tab to switch</text>
+                <text fg={t.textMuted}>  Tab to switch</text>
               </box>
             )}
           </box>

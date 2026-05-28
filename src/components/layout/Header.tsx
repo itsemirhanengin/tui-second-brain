@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import type { MainModule, SubModule } from "../../hooks/useNavigation"
+import { useTheme } from "../../hooks/useTheme"
 
 interface HeaderProps {
   module: MainModule
@@ -23,6 +24,7 @@ const SUB_TITLES: Record<string, string> = {
   stats: "Statistics",
   projects: "Projects",
   clients: "Clients",
+  tasks: "Tasks",
   timetracker: "Time Tracker",
   workdashboard: "Overview",
   general: "General",
@@ -30,6 +32,7 @@ const SUB_TITLES: Record<string, string> = {
 }
 
 export function Header({ module, subModule }: HeaderProps) {
+  const t = useTheme()
   const [time, setTime] = useState(new Date().toLocaleTimeString("en-US", { hour12: false }))
 
   useEffect(() => {
@@ -44,12 +47,12 @@ export function Header({ module, subModule }: HeaderProps) {
   const breadcrumb = sub ? `${title} > ${sub}` : title
 
   return (
-    <box style={{ height: 1, backgroundColor: "#1a1b26", paddingLeft: 1, paddingRight: 1, flexDirection: "row", justifyContent: "space-between", width: "100%" }}>
-      <text fg="#7aa2f7">
+    <box style={{ height: 1, backgroundColor: t.bg, paddingLeft: 1, paddingRight: 1, flexDirection: "row", justifyContent: "space-between", width: "100%" }}>
+      <text fg={t.primary}>
         <strong>Second Brain</strong>
-        <span fg="#565f89"> | {breadcrumb}</span>
+        <span fg={t.textSecondary}> | {breadcrumb}</span>
       </text>
-      <text fg="#565f89">{time} | ? for help</text>
+      <text fg={t.textSecondary}>{time} | ? for help</text>
     </box>
   )
 }

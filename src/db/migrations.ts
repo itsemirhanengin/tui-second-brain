@@ -180,6 +180,30 @@ const MIGRATIONS: string[] = [
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
   )`,
+
+  `CREATE TABLE IF NOT EXISTS task_statuses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL DEFAULT '#565f89',
+    position INTEGER NOT NULL DEFAULT 0,
+    progress TEXT NOT NULL DEFAULT 'none' CHECK(progress IN ('none','quarter','half','three_quarter','full','cancelled'))
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    status_id INTEGER NOT NULL,
+    project_id INTEGER,
+    priority TEXT NOT NULL DEFAULT 'none' CHECK(priority IN ('none','low','medium','high','urgent')),
+    assignee TEXT NOT NULL DEFAULT '',
+    labels TEXT NOT NULL DEFAULT '',
+    due_date TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (status_id) REFERENCES task_statuses(id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
+  )`,
 ]
 
 const SEED_DATA = [
@@ -187,8 +211,15 @@ const SEED_DATA = [
   `INSERT OR IGNORE INTO settings (key, value) VALUES ('date_format', 'YYYY-MM-DD')`,
   `INSERT OR IGNORE INTO settings (key, value) VALUES ('time_format', '24h')`,
   `INSERT OR IGNORE INTO settings (key, value) VALUES ('water_daily_goal', '2000')`,
+  `INSERT OR IGNORE INTO settings (key, value) VALUES ('theme', 'tokyo_night')`,
 
   `INSERT OR IGNORE INTO water_goals (daily_goal_ml) VALUES (2000)`,
+
+  `INSERT OR IGNORE INTO task_statuses (id, name, color, position, progress) VALUES (1, 'Backlog', '#565f89', 0, 'none')`,
+  `INSERT OR IGNORE INTO task_statuses (id, name, color, position, progress) VALUES (2, 'Todo', '#7aa2f7', 1, 'none')`,
+  `INSERT OR IGNORE INTO task_statuses (id, name, color, position, progress) VALUES (3, 'In Progress', '#f39c12', 2, 'half')`,
+  `INSERT OR IGNORE INTO task_statuses (id, name, color, position, progress) VALUES (4, 'Done', '#16c79a', 3, 'full')`,
+  `INSERT OR IGNORE INTO task_statuses (id, name, color, position, progress) VALUES (5, 'Cancelled', '#e94560', 4, 'cancelled')`,
 
   `INSERT OR IGNORE INTO categories (id, name, type, icon, color) VALUES (1, 'Salary', 'income', '💰', '#16c79a')`,
   `INSERT OR IGNORE INTO categories (id, name, type, icon, color) VALUES (2, 'Freelance', 'income', '💻', '#3498db')`,
@@ -208,17 +239,13 @@ const SEED_DATA = [
 ]
 
 export function runMigrations(): void {
-  db.run("BEGIN TRANSACTION")
-  try {
+  const migrate = db.transaction(() => {
     for (const sql of MIGRATIONS) {
       db.run(sql)
     }
     for (const sql of SEED_DATA) {
       db.run(sql)
     }
-    db.run("COMMIT")
-  } catch (err) {
-    db.run("ROLLBACK")
-    throw err
-  }
+  })
+  migrate()
 }

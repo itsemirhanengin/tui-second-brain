@@ -3,6 +3,7 @@ import { Header } from "./Header"
 import { StatusBar } from "./StatusBar"
 import { Sidebar } from "./Sidebar"
 import type { Navigation } from "../../hooks/useNavigation"
+import { useTheme } from "../../hooks/useTheme"
 
 interface MainLayoutProps {
   nav: Navigation
@@ -10,8 +11,10 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ nav, children }: MainLayoutProps) {
+  const t = useTheme()
+
   return (
-    <box style={{ flexDirection: "column", width: "100%", height: "100%" }}>
+    <box style={{ flexDirection: "column", width: "100%", height: "100%", backgroundColor: t.bgAlt }}>
       <Header module={nav.module} subModule={nav.subModule} />
       <box style={{ flexDirection: "row", flexGrow: 1 }}>
         <Sidebar nav={nav} />

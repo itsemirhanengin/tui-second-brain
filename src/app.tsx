@@ -31,7 +31,7 @@ export function App() {
       case "!": nav.navigate("dashboard"); return
       case "@": nav.navigate("life", "water"); return
       case "#": nav.navigate("routines", "list"); return
-      case "$": nav.navigate("work", "projects"); return
+      case "$": nav.navigate("work", "workdashboard"); return
       case "%": nav.navigate("settings", "general"); return
     }
 
