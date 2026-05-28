@@ -48,6 +48,11 @@ export function SettingsView({ subView }: { subView: string }) {
       return
     }
 
+    if (key.name === "escape" && inputFocused) {
+      setEditField(""); setInputFocused(false)
+      return
+    }
+
     if (inputFocused) return
 
     if (key.name === "escape") {

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useKeyboard } from "@opentui/react"
 import { MainLayout } from "./components/layout/MainLayout"
 import { useNavigation } from "./hooks/useNavigation"
@@ -10,12 +10,28 @@ import { LiabilitiesOverview } from "./modules/life/liabilities/LiabilitiesOverv
 import { RoutinesView } from "./modules/routines/RoutinesView"
 import { WorkView } from "./modules/work/WorkView"
 import { SettingsView } from "./modules/settings/SettingsView"
+import { CommandPalette } from "./components/command-palette/CommandPalette"
+import { buildCommands } from "./components/command-palette/commandRegistry"
 
 export function App() {
   const nav = useNavigation()
   const [showHelp, setShowHelp] = useState(false)
+  const [showCommandPalette, setShowCommandPalette] = useState(false)
+
+  const commands = useMemo(
+    () => buildCommands(nav, () => setShowCommandPalette(false)),
+    [nav],
+  )
 
   useKeyboard((key) => {
+    if (key.ctrl && key.name === "p") {
+      setShowCommandPalette((v) => !v)
+      setShowHelp(false)
+      return
+    }
+
+    if (showCommandPalette) return
+
     if (key.name === "?" || (key.shift && key.name === "/")) {
       setShowHelp((h) => !h)
       return
@@ -58,6 +74,7 @@ export function App() {
           <text fg="#e2e8f0">  Shift+Tab  Prev sub-module</text>
           <text fg="#e2e8f0">  ESC        Go back / Close</text>
           <text fg="#e2e8f0">  ?          Toggle this help</text>
+          <text fg="#e2e8f0">  Ctrl+P     Command palette</text>
           <box style={{ height: 1 }} />
           <text fg="#bb9af7"><strong>Common Actions</strong></text>
           <text fg="#e2e8f0">  N          New item</text>
@@ -110,5 +127,15 @@ export function App() {
     }
   }
 
-  return <MainLayout nav={nav}>{renderContent()}</MainLayout>
+  return (
+    <MainLayout nav={nav}>
+      {renderContent()}
+      {showCommandPalette && (
+        <CommandPalette
+          commands={commands}
+          onClose={() => setShowCommandPalette(false)}
+        />
+      )}
+    </MainLayout>
+  )
 }

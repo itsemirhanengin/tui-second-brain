@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
+import { consumePendingAction } from "../../utils/pendingAction"
 import { Badge } from "../../components/shared/Badge"
 import { CurrencyDisplay } from "../../components/shared/CurrencyDisplay"
 import { EmptyState } from "../../components/shared/EmptyState"
@@ -87,7 +88,30 @@ export function WorkView({ subView }: { subView: string }) {
     return () => clearInterval(interval)
   }, [])
 
+  const didConsume = useRef(false)
+  useEffect(() => {
+    if (didConsume.current) return
+    const action = consumePendingAction()
+    if (action === "new-project") {
+      didConsume.current = true
+      setView("new_project"); setProjStep(0); setProjName(""); setProjDesc("")
+      setProjDeadline(""); setProjRate(""); setInputFocused(true)
+    } else if (action === "new-client") {
+      didConsume.current = true
+      setView("new_client"); setClientStep(0); setClientName(""); setClientEmail("")
+      setClientCompany(""); setClientRate(""); setInputFocused(true)
+    } else if (action === "start-timer") {
+      didConsume.current = true
+      setView("timetracker"); setTimerDesc(""); setInputFocused(true)
+    }
+  })
+
   useKeyboard((key) => {
+    if (key.name === "escape" && inputFocused) {
+      setView(propView); setInputFocused(false)
+      return
+    }
+
     if (inputFocused) return
 
     if (view === "projects") {

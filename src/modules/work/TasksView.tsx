@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
+import { consumePendingAction } from "../../utils/pendingAction"
 import { EmptyState } from "../../components/shared/EmptyState"
 import {
   getTaskStatuses,
@@ -91,9 +92,25 @@ export function TasksView() {
   const [timerDesc, setTimerDesc] = useState("")
   const [startingTimer, setStartingTimer] = useState(false)
 
-  // Single useKeyboard hook to avoid React hooks ordering violation
+  const didConsume = useRef(false)
+  useEffect(() => {
+    if (didConsume.current) return
+    const action = consumePendingAction()
+    if (action === "new-task") {
+      didConsume.current = true
+      setNewTitle(""); setNewDesc(""); setNewPriority("none")
+      setNewStatusIdx(statuses.length > 1 ? 1 : 0)
+      setNewProjectIdx(0); setNewStep(0)
+      setView("new_task"); setInputFocused(true)
+    }
+  })
+
   useKeyboard((key) => {
-    // Picker navigation (works even when inputFocused, since pickers use a hidden input)
+    if (key.name === "escape" && inputFocused) {
+      setView("list"); setInputFocused(false); setStartingTimer(false)
+      return
+    }
+
     if (view === "new_status" || view === "edit_status") {
       if (statusStep === 1) {
         if (key.name === "left") { setStatusColorIdx((i) => Math.max(0, i - 1)); return }

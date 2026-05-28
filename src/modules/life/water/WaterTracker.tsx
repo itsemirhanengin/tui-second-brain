@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
+import { consumePendingAction } from "../../../utils/pendingAction"
 import { ProgressBar } from "../../../components/shared/ProgressBar"
 import { EmptyState } from "../../../components/shared/EmptyState"
 import {
@@ -44,7 +45,22 @@ export function WaterTracker() {
     [refresh]
   )
 
+  const didConsume = useRef(false)
+  useEffect(() => {
+    if (didConsume.current) return
+    const action = consumePendingAction()
+    if (action === "add-water") {
+      didConsume.current = true
+      setView("custom"); setCustomAmount(""); setInputFocused(true)
+    }
+  })
+
   useKeyboard((key) => {
+    if (key.name === "escape" && inputFocused) {
+      setView("main"); setInputFocused(false)
+      return
+    }
+
     if (inputFocused) return
 
     if (view === "main") {

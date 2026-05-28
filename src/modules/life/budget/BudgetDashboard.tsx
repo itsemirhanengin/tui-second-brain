@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
+import { consumePendingAction } from "../../../utils/pendingAction"
 import { ProgressBar } from "../../../components/shared/ProgressBar"
 import { CurrencyDisplay } from "../../../components/shared/CurrencyDisplay"
 import { EmptyState } from "../../../components/shared/EmptyState"
@@ -78,7 +79,23 @@ export function BudgetDashboard() {
     ewallet: "E-Wallet",
   }
 
+  const didConsume = useRef(false)
+  useEffect(() => {
+    if (didConsume.current) return
+    const action = consumePendingAction()
+    if (action === "new-transaction") {
+      didConsume.current = true
+      setView("add_tx"); setTxStep(0); setTxAmount(""); setTxDesc("")
+      setTxType("expense"); setInputFocused(true)
+    }
+  })
+
   useKeyboard((key) => {
+    if (key.name === "escape" && inputFocused) {
+      setView("overview"); setInputFocused(false)
+      return
+    }
+
     if (inputFocused) return
 
     if (view === "overview") {

@@ -8,10 +8,10 @@
 
 ### Command Palette
 
-- [ ] Global `Ctrl+P` or `/` command palette overlay
-- [ ] Fuzzy search across all actions: "New Task", "Go to Notes", "Start Timer", etc.
-- [ ] Module navigation, item search, and quick actions from one place
-- [ ] Recently used commands at the top
+- [x] Global `Ctrl+P` or `/` command palette overlay
+- [x] Fuzzy search across all actions: "New Task", "Go to Notes", "Start Timer", etc.
+- [x] Module navigation, item search, and quick actions from one place
+- [x] Recently used commands at the top
 
 ### Recurring Transactions
 

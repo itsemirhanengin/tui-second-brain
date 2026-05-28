@@ -70,6 +70,11 @@ export function LiabilitiesOverview() {
   const accountName = (id: number) => allAccounts.find((a) => a.id === id)?.name ?? "Unknown"
 
   useKeyboard((key) => {
+    if (key.name === "escape" && inputFocused) {
+      setView("overview"); setInputFocused(false)
+      return
+    }
+
     if (inputFocused) return
 
     if (view === "overview") {

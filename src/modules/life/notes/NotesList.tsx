@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
+import { consumePendingAction } from "../../../utils/pendingAction"
 import { EmptyState } from "../../../components/shared/EmptyState"
 import {
   getAllNotes,
@@ -48,7 +49,22 @@ export function NotesList() {
     []
   )
 
+  const didConsume = useRef(false)
+  useEffect(() => {
+    if (didConsume.current) return
+    const action = consumePendingAction()
+    if (action === "new-note") {
+      didConsume.current = true
+      setView("new"); setNewTitle(""); setInputFocused(true)
+    }
+  })
+
   useKeyboard((key) => {
+    if (key.name === "escape" && inputFocused) {
+      setView("list"); setNotes(getAllNotes()); setInputFocused(false); setSelectedIndex(0)
+      return
+    }
+
     if (inputFocused) return
 
     if (view === "list" || view === "archive") {

@@ -26,7 +26,7 @@ export function StatusBar({ message }: StatusBarProps) {
 
   return (
     <box style={{ height: 1, backgroundColor: t.bg, paddingLeft: 1, paddingRight: 1, flexDirection: "row", justifyContent: "space-between", width: "100%" }}>
-      <text fg={t.textSecondary}>{message ?? "⇧1..5: Navigate | Tab: Sub-module | ESC: Back | ?: Help"}</text>
+      <text fg={t.textSecondary}>{message ?? "⇧1..5: Navigate | Tab: Sub-module | Ctrl+P: Commands | ?: Help"}</text>
       {timerText && <text fg={t.warning}>{timerText}</text>}
     </box>
   )

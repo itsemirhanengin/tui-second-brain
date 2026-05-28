@@ -1,5 +1,6 @@
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
+import { consumePendingAction } from "../../utils/pendingAction"
 import { Badge } from "../../components/shared/Badge"
 import { ProgressBar } from "../../components/shared/ProgressBar"
 import { EmptyState } from "../../components/shared/EmptyState"
@@ -48,7 +49,24 @@ export function RoutinesView({ subView }: { subView: "list" | "stats" }) {
 
   const [logNote, setLogNote] = useState("")
 
+  const didConsume = useRef(false)
+  useEffect(() => {
+    if (didConsume.current) return
+    const action = consumePendingAction()
+    if (action === "new-routine") {
+      didConsume.current = true
+      setView("new"); setFormStep(0); setFormName(""); setFormDesc("")
+      setFormFreq("daily"); setFormDays(""); setFormTime("")
+      setInputFocused(true)
+    }
+  })
+
   useKeyboard((key) => {
+    if (key.name === "escape" && inputFocused) {
+      setView("today"); setInputFocused(false)
+      return
+    }
+
     if (inputFocused) return
 
     if (view === "today") {
