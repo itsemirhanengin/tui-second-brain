@@ -17,7 +17,7 @@ A comprehensive **Second Brain** application that runs entirely in your terminal
 │                          │                                                      │
 │                          │  ┌─ Upcoming Payments ───┐  ┌─ Active Projects ──┐   │
 │                          │  │ 2026-06-01  Loan  ₺5k │  │ Website Redesign   │   │
-│                          │  │ 2026-06-05  CC   ₺3k  │  │ Mobile App         │   │
+│                          │  │ 2026-06-05  CC    ₺3k │  │ Mobile App         │   │
 │                          │  └───────────────────────┘  └────────────────────┘   │
 ├──────────────────────────┴──────────────────────────────────────────────────────┤
 │ ⇧1..5: Navigate | Tab: Sub-module | ESC: Back | ?: Help                         │
