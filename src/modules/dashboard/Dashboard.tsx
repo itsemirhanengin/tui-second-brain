@@ -11,6 +11,7 @@ import { getAllNotes } from "../life/notes/notesStore"
 import { getCurrency } from "../settings/settingsStore"
 import { formatCurrency } from "../../utils/currency"
 import { formatDuration, currentMonth, currentYear, getMonthName } from "../../utils/date"
+import { getNotifications, type AppNotification } from "../../utils/notifications"
 
 export function Dashboard() {
   const currency = getCurrency()
@@ -45,6 +46,10 @@ export function Dashboard() {
   const activeProjects = getProjects("active")
 
   const urgencyColor: Record<string, string> = { green: "#16c79a", yellow: "#f39c12", red: "#e94560", overdue: "#e94560" }
+  const notifications = getNotifications()
+
+  const severityColors: Record<string, string> = { danger: "#e94560", warning: "#f39c12", info: "#3498db" }
+  const severityIcons: Record<string, string> = { danger: "!", warning: "~", info: "i" }
 
   return (
     <box style={{ flexDirection: "column", gap: 1 }}>
@@ -52,6 +57,20 @@ export function Dashboard() {
         <strong>Dashboard</strong>
         <span fg="#565f89"> — {getMonthName(month)} {year}</span>
       </text>
+
+      {notifications.length > 0 && (
+        <box style={{ flexDirection: "column", borderStyle: "rounded", borderColor: "#e94560", padding: 1 }}>
+          <text fg="#e94560"><strong>Today's Briefing</strong> <span fg="#565f89">({notifications.length} item{notifications.length > 1 ? "s" : ""})</span></text>
+          {notifications.slice(0, 6).map((n) => (
+            <box key={n.id} style={{ flexDirection: "row", gap: 1 }}>
+              <text fg={severityColors[n.severity]}>[{severityIcons[n.severity]}]</text>
+              <text fg="#e2e8f0">{n.title}</text>
+              <text fg="#565f89">{n.detail}</text>
+            </box>
+          ))}
+          {notifications.length > 6 && <text fg="#414868">...and {notifications.length - 6} more</text>}
+        </box>
+      )}
 
       <box style={{ flexDirection: "row", gap: 2 }}>
         {/* Water */}

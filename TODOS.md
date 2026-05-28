@@ -22,10 +22,10 @@
 
 ### Notification System
 
-- [ ] Startup alerts: overdue payments, missed routines, approaching deadlines
-- [ ] StatusBar notification badges with count
-- [ ] "Today's Briefing" view on Dashboard: what needs attention right now
-- [ ] Configurable: which notifications to show (Settings)
+- [x] Startup alerts: overdue payments, missed routines, approaching deadlines
+- [x] StatusBar notification badges with count
+- [x] "Today's Briefing" view on Dashboard: what needs attention right now
+- [x] Configurable: which notifications to show (Settings)
 
 ### Subtasks
 

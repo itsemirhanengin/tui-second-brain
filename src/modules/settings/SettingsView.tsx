@@ -81,6 +81,18 @@ export function SettingsView({ subView }: { subView: string }) {
           setThemeIdx(THEME_KEYS.indexOf(currentThemeKey) >= 0 ? THEME_KEYS.indexOf(currentThemeKey) : 0)
           setPickingTheme(true)
           break
+        case "1":
+          setSetting("notifications_payments", (settings.notifications_payments ?? "1") === "1" ? "0" : "1")
+          break
+        case "2":
+          setSetting("notifications_routines", (settings.notifications_routines ?? "1") === "1" ? "0" : "1")
+          break
+        case "3":
+          setSetting("notifications_deadlines", (settings.notifications_deadlines ?? "1") === "1" ? "0" : "1")
+          break
+        case "4":
+          setSetting("notifications_budget", (settings.notifications_budget ?? "1") === "1" ? "0" : "1")
+          break
       }
     } else if (view === "water") {
       if (key.name === "g") {
@@ -197,6 +209,32 @@ export function SettingsView({ subView }: { subView: string }) {
           <box style={{ flexDirection: "row", gap: 1 }}>
             <text fg={theme.textSecondary}>[H] Theme:</text>
             <text fg={theme.primary}>{THEMES[currentThemeKey]?.name ?? currentThemeKey}</text>
+          </box>
+          <box style={{ height: 1 }} />
+          <text fg={theme.textSecondary}><strong>Notifications</strong></text>
+          <box style={{ flexDirection: "row", gap: 1 }}>
+            <text fg={theme.textSecondary}>[1] Payments:</text>
+            <text fg={(settings.notifications_payments ?? "1") === "1" ? theme.success : theme.textMuted}>
+              {(settings.notifications_payments ?? "1") === "1" ? "ON" : "OFF"}
+            </text>
+          </box>
+          <box style={{ flexDirection: "row", gap: 1 }}>
+            <text fg={theme.textSecondary}>[2] Routines:</text>
+            <text fg={(settings.notifications_routines ?? "1") === "1" ? theme.success : theme.textMuted}>
+              {(settings.notifications_routines ?? "1") === "1" ? "ON" : "OFF"}
+            </text>
+          </box>
+          <box style={{ flexDirection: "row", gap: 1 }}>
+            <text fg={theme.textSecondary}>[3] Deadlines:</text>
+            <text fg={(settings.notifications_deadlines ?? "1") === "1" ? theme.success : theme.textMuted}>
+              {(settings.notifications_deadlines ?? "1") === "1" ? "ON" : "OFF"}
+            </text>
+          </box>
+          <box style={{ flexDirection: "row", gap: 1 }}>
+            <text fg={theme.textSecondary}>[4] Budget:</text>
+            <text fg={(settings.notifications_budget ?? "1") === "1" ? theme.success : theme.textMuted}>
+              {(settings.notifications_budget ?? "1") === "1" ? "ON" : "OFF"}
+            </text>
           </box>
           <box style={{ height: 1 }} />
           <text fg={theme.textMuted}>Data stored at: {DATA_DIR}</text>
