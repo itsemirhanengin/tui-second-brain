@@ -302,11 +302,12 @@ export function TasksView() {
         <text fg="#f39c12"><strong>Start Timer{task ? ` — ${task.title}` : ""}</strong></text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">Description:</text>
-          <input placeholder={timerDesc} value={timerDesc} onInput={setTimerDesc} onSubmit={() => {
+          <input placeholder={timerDesc} value={timerDesc} onInput={setTimerDesc} onSubmit={((val: string) => {
+            setTimerDesc(val)
             const projId = task?.project_id ?? null
-            startTimer(projId, timerDesc)
+            startTimer(projId, val)
             setStartingTimer(false); setInputFocused(false)
-          }} focused style={{ width: 40 }} />
+          }) as any} focused style={{ width: 40 }} />
         </box>
         <text fg="#414868">Enter to start timer, ESC to cancel</text>
       </box>

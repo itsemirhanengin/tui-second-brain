@@ -31,7 +31,10 @@ export function NewTaskWizard({ step, title, desc, setTitle, setDesc, projects, 
         <text fg="#7aa2f7"><strong>New Task</strong> (Step {step + 1}/5)</text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">{s.label}</text>
-          <input placeholder={s.placeholder} value={s.value} onInput={s.setter} onSubmit={onNext} focused style={{ width: 40 }} />
+          <input placeholder={s.placeholder} value={s.value} onInput={s.setter} onSubmit={((val: string) => {
+            s.setter(val)
+            onNext()
+          }) as any} focused style={{ width: 40 }} />
         </box>
         <text fg="#414868">Enter to continue, ESC to cancel</text>
       </box>

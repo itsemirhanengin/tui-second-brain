@@ -126,15 +126,16 @@ export function WaterTracker() {
             placeholder="2000"
             value={goalInput}
             onInput={setGoalInput}
-            onSubmit={() => {
-              const val = Number(goalInput)
-              if (val > 0) {
-                setGoal(val)
+            onSubmit={((v: string) => {
+              setGoalInput(v)
+              const num = Number(v)
+              if (num > 0) {
+                setGoal(num)
                 refresh()
               }
               setView("main")
               setInputFocused(false)
-            }}
+            }) as any}
             focused
             style={{ width: 10 }}
           />
@@ -156,16 +157,17 @@ export function WaterTracker() {
             placeholder="e.g. 400"
             value={customAmount}
             onInput={setCustomAmount}
-            onSubmit={() => {
-              const val = Number(customAmount)
-              if (val > 0) {
-                addWaterEntry(val)
+            onSubmit={((v: string) => {
+              setCustomAmount(v)
+              const num = Number(v)
+              if (num > 0) {
+                addWaterEntry(num)
                 refresh()
               }
               setCustomAmount("")
               setView("main")
               setInputFocused(false)
-            }}
+            }) as any}
             focused
             style={{ width: 10 }}
           />

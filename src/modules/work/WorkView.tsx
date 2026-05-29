@@ -91,7 +91,8 @@ export function WorkView({ subView }: { subView: string }) {
         case "up": setSelectedIndex((i) => Math.max(0, i - 1)); break
         case "down": setSelectedIndex((i) => Math.min(timeEntries.length - 1, i + 1)); break
         case "t":
-          if (runningTimer) { stopTimer(); setTimerDesc(""); setInputFocused(true) }
+          if (runningTimer) { stopTimer(); refresh() }
+          else { setTimerDesc(""); setInputFocused(true) }
           break
         case "m": setView("manual_entry"); setInputFocused(true); break
         case "o": {
@@ -138,10 +139,11 @@ export function WorkView({ subView }: { subView: string }) {
         inputFocused={inputFocused}
         timerDesc={timerDesc}
         setTimerDesc={setTimerDesc}
-        onStartTimer={() => {
+        onStartTimer={(desc?: string) => {
           const projId = projects[0]?.id ?? null
-          startTimer(projId, timerDesc)
+          startTimer(projId, desc ?? timerDesc)
           setInputFocused(false)
+          refresh()
         }}
         onInputFocused={setInputFocused}
       />

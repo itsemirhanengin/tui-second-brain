@@ -84,13 +84,14 @@ export function HabitsView() {
         <text fg="#7aa2f7"><strong>New Habit</strong> (Step {newStep + 1}/{steps.length})</text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">{step.label}</text>
-          <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={() => {
+          <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={((val: string) => {
+            step.setter(val)
             if (newStep < steps.length - 1) setNewStep(newStep + 1)
             else {
               if (newName.trim()) createHabit(newName.trim(), newCat.trim())
               setView("list"); setInputFocused(false)
             }
-          }} focused style={{ width: 30 }} />
+          }) as any} focused style={{ width: 30 }} />
         </box>
         <text fg="#414868">Enter to continue, ESC to cancel</text>
       </box>

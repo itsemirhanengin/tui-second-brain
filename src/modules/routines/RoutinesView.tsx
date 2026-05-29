@@ -112,10 +112,11 @@ export function RoutinesView({ subView }: { subView: "list" | "stats" }) {
         <text fg="#16c79a"><strong>Mark Complete: {activeRoutine.name}</strong></text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">Note (optional):</text>
-          <input placeholder="How did it go?" value={logNote} onInput={setLogNote} onSubmit={() => {
-            log(activeRoutine.id, "completed", logNote)
+          <input placeholder="How did it go?" value={logNote} onInput={setLogNote} onSubmit={((val: string) => {
+            setLogNote(val)
+            log(activeRoutine.id, "completed", val)
             setView("today"); setInputFocused(false)
-          }} focused style={{ width: 40 }} />
+          }) as any} focused style={{ width: 40 }} />
         </box>
         <text fg="#414868">Enter to save, ESC to cancel</text>
       </box>
@@ -128,12 +129,13 @@ export function RoutinesView({ subView }: { subView: "list" | "stats" }) {
         <text fg="#f39c12"><strong>Skip: {activeRoutine.name}</strong></text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">Reason (required):</text>
-          <input placeholder="Why are you skipping?" value={logNote} onInput={setLogNote} onSubmit={() => {
-            if (logNote.trim()) {
-              log(activeRoutine.id, "skipped", logNote)
+          <input placeholder="Why are you skipping?" value={logNote} onInput={setLogNote} onSubmit={((val: string) => {
+            setLogNote(val)
+            if (val.trim()) {
+              log(activeRoutine.id, "skipped", val)
               setView("today"); setInputFocused(false)
             }
-          }} focused style={{ width: 40 }} />
+          }) as any} focused style={{ width: 40 }} />
         </box>
         <text fg="#414868">Enter to save (reason required), ESC to cancel</text>
       </box>

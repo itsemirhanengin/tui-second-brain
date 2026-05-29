@@ -180,16 +180,17 @@ export function SettingsView({ subView }: { subView: string }) {
         <text fg={theme.primary}><strong>Edit Setting</strong></text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg={theme.textSecondary}>{labels[editField] ?? editField}</text>
-          <input value={editValue} onInput={setEditValue} onSubmit={() => {
+          <input value={editValue} onInput={setEditValue} onSubmit={((val: string) => {
+            setEditValue(val)
             if (editField === "water_goal") {
-              const val = Number(editValue)
-              if (val > 0) setWaterGoal(val)
+              const num = Number(val)
+              if (num > 0) setWaterGoal(num)
             } else {
-              setSetting(editField, editValue)
+              setSetting(editField, val)
             }
             setEditField("")
             setInputFocused(false)
-          }} focused style={{ width: 20 }} />
+          }) as any} focused style={{ width: 20 }} />
         </box>
         <text fg={theme.textMuted}>Enter to save, ESC to cancel</text>
       </box>

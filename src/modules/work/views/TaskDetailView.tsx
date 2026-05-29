@@ -26,7 +26,10 @@ export function TaskDetailView({ task, statuses, projects, subtaskIdx, addingSub
         <text fg="#7aa2f7"><strong>{task.title}</strong> — Add Subtask</text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">Subtask:</text>
-          <input placeholder="What needs to be done?" value={newSubtaskTitle} onInput={setNewSubtaskTitle} onSubmit={onAddSubtask} focused style={{ width: 40 }} />
+          <input placeholder="What needs to be done?" value={newSubtaskTitle} onInput={setNewSubtaskTitle} onSubmit={((val: string) => {
+            setNewSubtaskTitle(val)
+            onAddSubtask()
+          }) as any} focused style={{ width: 40 }} />
         </box>
         <text fg="#414868">Enter to add, ESC to cancel</text>
       </box>

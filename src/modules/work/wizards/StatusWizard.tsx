@@ -59,7 +59,10 @@ export function StatusWizard({ isEdit, statusStep, statusName, statusColorIdx, s
       <text fg="#7aa2f7"><strong>{isEdit ? "Edit" : "New"} Status</strong> — Name</text>
       <box style={{ flexDirection: "row", gap: 1 }}>
         <text fg="#565f89">Status Name:</text>
-        <input placeholder="e.g. In Review" value={statusName} onInput={setStatusName} onSubmit={onNameSubmit} focused style={{ width: 30 }} />
+        <input placeholder="e.g. In Review" value={statusName} onInput={setStatusName} onSubmit={((val: string) => {
+          setStatusName(val)
+          onNameSubmit()
+        }) as any} focused style={{ width: 30 }} />
       </box>
       <text fg="#414868">Enter to continue, ESC to cancel</text>
     </box>

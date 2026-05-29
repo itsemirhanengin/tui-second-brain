@@ -106,13 +106,14 @@ export function GoalsView() {
         <text fg="#7aa2f7"><strong>New Goal</strong> (Step {newStep + 1}/{steps.length})</text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">{step.label}</text>
-          <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={() => {
+          <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={((val: string) => {
+            step.setter(val)
             if (newStep < steps.length - 1) setNewStep(newStep + 1)
             else {
               if (newTitle.trim()) createGoal(newTitle.trim(), newDesc, newDate || null, Number(newTarget) || null, newUnit)
               setView("list"); setInputFocused(false)
             }
-          }} focused style={{ width: 35 }} />
+          }) as any} focused style={{ width: 35 }} />
         </box>
         <text fg="#414868">Enter to continue, ESC to cancel</text>
       </box>
@@ -125,10 +126,11 @@ export function GoalsView() {
         <text fg="#7aa2f7"><strong>{activeGoal.title}</strong> — Add Milestone</text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">Milestone:</text>
-          <input placeholder="e.g. Complete first chapter" value={msTitle} onInput={setMsTitle} onSubmit={() => {
-            if (msTitle.trim()) createMilestone(activeGoal.id, msTitle.trim())
+          <input placeholder="e.g. Complete first chapter" value={msTitle} onInput={setMsTitle} onSubmit={((val: string) => {
+            setMsTitle(val)
+            if (val.trim()) createMilestone(activeGoal.id, val.trim())
             setView("detail"); setInputFocused(false)
-          }} focused style={{ width: 35 }} />
+          }) as any} focused style={{ width: 35 }} />
         </box>
         <text fg="#414868">Enter to add, ESC to cancel</text>
       </box>
@@ -142,12 +144,13 @@ export function GoalsView() {
         <text fg="#565f89">Current: {activeGoal.current_value}{activeGoal.unit ? ` ${activeGoal.unit}` : ""} {activeGoal.target_value ? `/ ${activeGoal.target_value} ${activeGoal.unit}` : ""}</text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">New Value:</text>
-          <input placeholder={String(activeGoal.current_value)} value={progressInput} onInput={setProgressInput} onSubmit={() => {
-            const val = Number(progressInput)
-            if (!isNaN(val)) updateGoalProgress(activeGoal.id, val)
+          <input placeholder={String(activeGoal.current_value)} value={progressInput} onInput={setProgressInput} onSubmit={((v: string) => {
+            setProgressInput(v)
+            const num = Number(v)
+            if (!isNaN(num)) updateGoalProgress(activeGoal.id, num)
             setActiveGoal(getGoals(true).find((g) => g.id === activeGoal.id) ?? activeGoal)
             setView("detail"); setInputFocused(false); bump()
-          }} focused style={{ width: 15 }} />
+          }) as any} focused style={{ width: 15 }} />
         </box>
         <text fg="#414868">Enter to save, ESC to cancel</text>
       </box>

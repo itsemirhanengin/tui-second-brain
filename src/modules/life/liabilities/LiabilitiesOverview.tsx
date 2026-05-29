@@ -142,12 +142,13 @@ export function LiabilitiesOverview() {
         <text fg="#7aa2f7"><strong>Update Statement - {accountName(selectedCard.account_id)}</strong></text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">Statement Amount ({currency}):</text>
-          <input placeholder="0" value={statementAmount} onInput={setStatementAmount} onSubmit={() => {
-            const amt = Number(statementAmount)
+          <input placeholder="0" value={statementAmount} onInput={setStatementAmount} onSubmit={((val: string) => {
+            setStatementAmount(val)
+            const amt = Number(val)
             updateCreditCardDebt(selectedCard.id, selectedCard.statement_date, selectedCard.due_days_after_statement, selectedCard.min_payment_rate, selectedCard.current_balance, amt, new Date().toISOString().split("T")[0])
             setView("overview")
             setInputFocused(false)
-          }} focused style={{ width: 15 }} />
+          }) as any} focused style={{ width: 15 }} />
         </box>
         <text fg="#414868">Enter to save, ESC to cancel</text>
       </box>
@@ -160,11 +161,12 @@ export function LiabilitiesOverview() {
         <text fg="#7aa2f7"><strong>Record Payment</strong></text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">Amount ({currency}):</text>
-          <input placeholder="0" value={paymentAmount} onInput={setPaymentAmount} onSubmit={() => {
-            recordPayment(paymentTarget.type, paymentTarget.id, Number(paymentAmount) || 0, false, paymentNote)
+          <input placeholder="0" value={paymentAmount} onInput={setPaymentAmount} onSubmit={((val: string) => {
+            setPaymentAmount(val)
+            recordPayment(paymentTarget.type, paymentTarget.id, Number(val) || 0, false, paymentNote)
             setView("overview")
             setInputFocused(false)
-          }} focused style={{ width: 15 }} />
+          }) as any} focused style={{ width: 15 }} />
         </box>
         <text fg="#414868">Enter to record, ESC to cancel</text>
       </box>
@@ -201,7 +203,8 @@ export function LiabilitiesOverview() {
         ) : (
           <box style={{ flexDirection: "row", gap: 1 }}>
             <text fg="#565f89">{step.label}</text>
-            <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={() => {
+            <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={((val: string) => {
+              step.setter(val)
               if (formStep < steps.length) {
                 setFormStep(formStep + 1)
               } else {
@@ -210,7 +213,7 @@ export function LiabilitiesOverview() {
                 setView("overview")
                 setInputFocused(false)
               }
-            }} focused style={{ width: 15 }} />
+            }) as any} focused style={{ width: 15 }} />
           </box>
         )}
         <text fg="#414868">Enter to continue, ESC to cancel</text>
@@ -236,7 +239,8 @@ export function LiabilitiesOverview() {
         <text fg="#7aa2f7"><strong>Add Loan</strong> (Step {loanStep + 1}/{steps.length})</text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">{step.label}</text>
-          <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={() => {
+          <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={((val: string) => {
+            step.setter(val)
             if (loanStep < steps.length - 1) {
               setLoanStep(loanStep + 1)
             } else {
@@ -244,7 +248,7 @@ export function LiabilitiesOverview() {
               setView("overview")
               setInputFocused(false)
             }
-          }} focused style={{ width: 30 }} />
+          }) as any} focused style={{ width: 30 }} />
         </box>
         <text fg="#414868">Enter to continue, ESC to cancel</text>
       </box>

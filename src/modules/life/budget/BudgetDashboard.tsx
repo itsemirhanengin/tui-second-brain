@@ -197,11 +197,12 @@ export function BudgetDashboard() {
         <text fg="#7aa2f7"><strong>Set Budget Limit: {cat.name}</strong></text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">Monthly Limit ({currency}):</text>
-          <input placeholder="e.g. 5000" value={limitInput} onInput={setLimitInput} onSubmit={() => {
-            const val = Number(limitInput)
-            updateCategory(cat.id, cat.name, val > 0 ? val : null, cat.color, cat.icon)
+          <input placeholder="e.g. 5000" value={limitInput} onInput={setLimitInput} onSubmit={((val: string) => {
+            setLimitInput(val)
+            const num = Number(val)
+            updateCategory(cat.id, cat.name, num > 0 ? num : null, cat.color, cat.icon)
             setView("categories"); setInputFocused(false)
-          }} focused style={{ width: 15 }} />
+          }) as any} focused style={{ width: 15 }} />
         </box>
         <text fg="#414868">Enter to save (0 or empty to remove limit), ESC to cancel</text>
       </box>
@@ -220,10 +221,11 @@ export function BudgetDashboard() {
         <text fg="#7aa2f7"><strong>New Account</strong> (Step {accStep + 1}/{steps.length})</text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">{step.label}</text>
-          <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={() => {
+          <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={((val: string) => {
+            step.setter(val)
             if (accStep < steps.length - 1) setAccStep(accStep + 1)
             else { createAccount(accName, accType, Number(accBalance) || 0, currency); setView("accounts"); setInputFocused(false) }
-          }} focused style={{ width: 30 }} />
+          }) as any} focused style={{ width: 30 }} />
         </box>
         <text fg="#414868">Enter to continue, ESC to cancel</text>
       </box>
@@ -242,10 +244,11 @@ export function BudgetDashboard() {
         <text fg="#7aa2f7"><strong>New Category</strong> (Step {catStep + 1}/{steps.length})</text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">{step.label}</text>
-          <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={() => {
+          <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={((val: string) => {
+            step.setter(val)
             if (catStep < steps.length - 1) setCatStep(catStep + 1)
             else { createCategory(catName, catType, null, Number(catLimit) || null); setView("categories"); setInputFocused(false) }
-          }} focused style={{ width: 30 }} />
+          }) as any} focused style={{ width: 30 }} />
         </box>
         <text fg="#414868">Enter to continue, ESC to cancel</text>
       </box>
@@ -269,7 +272,10 @@ export function BudgetDashboard() {
           <text fg="#7aa2f7"><strong>New Recurring</strong> (Step {recStep + 1}/{textSteps.length + 2})</text>
           <box style={{ flexDirection: "row", gap: 1 }}>
             <text fg="#565f89">{step.label}</text>
-            <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={() => setRecStep(recStep + 1)} focused style={{ width: 30 }} />
+            <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={((val: string) => {
+              step.setter(val)
+              setRecStep(recStep + 1)
+            }) as any} focused style={{ width: 30 }} />
           </box>
           <text fg="#414868">Enter to continue, ESC to cancel</text>
         </box>
@@ -328,7 +334,10 @@ export function BudgetDashboard() {
         {txStep < steps.length ? (
           <box style={{ flexDirection: "row", gap: 1 }}>
             <text fg="#565f89">{step.label}</text>
-            <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={() => setTxStep(txStep + 1)} focused style={{ width: 30 }} />
+            <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={((val: string) => {
+              step.setter(val)
+              setTxStep(txStep + 1)
+            }) as any} focused style={{ width: 30 }} />
           </box>
         ) : (
           <box style={{ flexDirection: "column", gap: 1 }}>

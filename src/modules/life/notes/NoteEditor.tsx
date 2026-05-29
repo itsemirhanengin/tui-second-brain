@@ -67,14 +67,15 @@ export function NoteEditor({ note, onDone }: NoteEditorProps) {
               placeholder="Enter password..."
               value={lockPassword}
               onInput={setLockPassword}
-              onSubmit={async () => {
-                if (lockPassword.trim()) {
-                  const hash = await hashPassword(lockPassword)
+              onSubmit={(async (val: string) => {
+                setLockPassword(val)
+                if (val.trim()) {
+                  const hash = await hashPassword(val)
                   lockNote(note.id, hash)
                 }
                 setLockPassword("")
                 setMode("content")
-              }}
+              }) as any}
               focused
               style={{ width: 30 }}
             />

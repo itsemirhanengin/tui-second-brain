@@ -11,7 +11,7 @@ interface TimeTrackerViewProps {
   inputFocused: boolean
   timerDesc: string
   setTimerDesc: (v: string) => void
-  onStartTimer: () => void
+  onStartTimer: (desc?: string) => void
   onInputFocused: (v: boolean) => void
 }
 
@@ -28,7 +28,10 @@ export function TimeTrackerView({ selectedIndex, inputFocused, timerDesc, setTim
         <text fg="#7aa2f7"><strong>Start Timer</strong></text>
         <box style={{ flexDirection: "row", gap: 1 }}>
           <text fg="#565f89">Description:</text>
-          <input placeholder="What are you working on?" value={timerDesc} onInput={setTimerDesc} onSubmit={onStartTimer} focused style={{ width: 40 }} />
+          <input placeholder="What are you working on?" value={timerDesc} onInput={setTimerDesc} onSubmit={((val: string) => {
+            setTimerDesc(val)
+            onStartTimer(val)
+          }) as any} focused style={{ width: 40 }} />
         </box>
         <text fg="#414868">Enter to start, ESC to cancel</text>
       </box>

@@ -141,9 +141,10 @@ export function NotesList() {
             placeholder="Enter password..."
             value={passwordInput}
             onInput={setPasswordInput}
-            onSubmit={async () => {
+            onSubmit={(async (val: string) => {
+              setPasswordInput(val)
               if (activeNote?.password_hash) {
-                const valid = await verifyPassword(passwordInput, activeNote.password_hash)
+                const valid = await verifyPassword(val, activeNote.password_hash)
                 if (valid) {
                   setView(pendingAction === "edit" ? "editor" : "viewer")
                 } else {
@@ -151,7 +152,7 @@ export function NotesList() {
                 }
               }
               setInputFocused(false)
-            }}
+            }) as any}
             focused
             style={{ width: 30 }}
           />
@@ -173,14 +174,15 @@ export function NotesList() {
             placeholder="Note title..."
             value={newTitle}
             onInput={setNewTitle}
-            onSubmit={() => {
-              if (newTitle.trim()) {
-                const note = createNote(newTitle.trim())
+            onSubmit={((val: string) => {
+              setNewTitle(val)
+              if (val.trim()) {
+                const note = createNote(val.trim())
                 setActiveNote(note)
                 setView("editor")
               }
               setInputFocused(false)
-            }}
+            }) as any}
             focused
             style={{ width: 40 }}
           />
@@ -202,12 +204,13 @@ export function NotesList() {
             placeholder="Search..."
             value={searchQuery}
             onInput={setSearchQuery}
-            onSubmit={() => {
-              setNotes(searchNotes(searchQuery))
+            onSubmit={((val: string) => {
+              setSearchQuery(val)
+              setNotes(searchNotes(val))
               setView("list")
               setInputFocused(false)
               setSelectedIndex(0)
-            }}
+            }) as any}
             focused
             style={{ width: 40 }}
           />
