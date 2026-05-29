@@ -1,11 +1,9 @@
-let _pendingAction: string | null = null
+import { useUIStore } from "../stores/useUIStore"
 
 export function setPendingAction(action: string): void {
-  _pendingAction = action
+  useUIStore.getState().setPendingAction(action)
 }
 
 export function consumePendingAction(): string | null {
-  const action = _pendingAction
-  _pendingAction = null
-  return action
+  return useUIStore.getState().consumePendingAction()
 }

@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useKeyboard } from "@opentui/react"
-import { consumePendingAction } from "../../utils/pendingAction"
-import { setGlobalInputFocus } from "../../utils/inputFocus"
-import { EmptyState } from "../../components/shared/EmptyState"
+import { useUIStore } from "../../stores/useUIStore"
+import { useRunningTimer } from "../../hooks/useRunningTimer"
 import {
   getTaskStatuses,
   getTasks,
@@ -20,51 +19,33 @@ import {
   toggleSubtask,
   deleteSubtask,
   getAllSubtaskCounts,
-  PROGRESS_ICONS,
-  PRIORITY_ICONS,
   COLOR_PALETTE,
   type TaskStatus,
   type Task,
-  type Subtask,
-  type ProgressLevel,
   type Priority,
+  type ProgressLevel,
 } from "./taskStore"
-import {
-  getProjects,
-  getRunningTimer,
-  startTimer,
-  stopTimer,
-} from "./workStore"
-import {
-  startPomodoro,
-  stopPomodoro,
-  getPomodoroState,
-  getTodayPomodoroCount,
-  getTaskPomodoroCount,
-  formatPomodoroTime,
-} from "./pomodoroStore"
-import { formatDuration } from "../../utils/date"
+import { getProjects } from "./workStore"
+import { startPomodoro, stopPomodoro, getPomodoroState } from "./pomodoroStore"
+import { TaskListView } from "./views/TaskListView"
+import { KanbanBoard } from "./views/KanbanBoard"
+import { TaskDetailView } from "./views/TaskDetailView"
+import { StatusManager } from "./views/StatusManager"
+import { NewTaskWizard } from "./wizards/NewTaskWizard"
+import { EditTaskWizard } from "./wizards/EditTaskWizard"
+import { StatusWizard } from "./wizards/StatusWizard"
 
 type View = "list" | "kanban" | "new_task" | "edit_task" | "manage_statuses" | "new_status" | "edit_status" | "task_detail"
 
 const PROGRESS_LEVELS: ProgressLevel[] = ["none", "quarter", "half", "three_quarter", "full", "cancelled"]
-const PROGRESS_LABELS: Record<ProgressLevel, string> = {
-  none: "Not started",
-  quarter: "Started",
-  half: "Halfway",
-  three_quarter: "Almost done",
-  full: "Complete",
-  cancelled: "Cancelled",
-}
 const PRIORITIES: Priority[] = ["none", "low", "medium", "high", "urgent"]
 
 export function TasksView() {
   const [view, setView] = useState<View>("list")
   const [inputFocused, _setInputFocused] = useState(false)
-  const setInputFocused = (v: boolean) => { _setInputFocused(v); setGlobalInputFocus(v) }
+  const { setInputFocused: setGlobalFocus, consumePendingAction } = useUIStore()
+  const setInputFocused = (v: boolean) => { _setInputFocused(v); setGlobalFocus(v) }
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [, setDataVer] = useState(0)
-  const bump = () => setDataVer((v) => v + 1)
   const [kanbanCol, setKanbanCol] = useState(0)
   const [kanbanRow, setKanbanRow] = useState(0)
   const [filterProjectId, setFilterProjectId] = useState<number | null>(null)
@@ -73,18 +54,9 @@ export function TasksView() {
   const allTasks = getTasks(filterProjectId ?? undefined)
   const projects = getProjects()
   const taskCounts = getTaskCountByStatus(filterProjectId ?? undefined)
+  const subtaskCounts = getAllSubtaskCounts()
 
-  const [runningTimer, setRunningTimer] = useState(getRunningTimer())
-  const [elapsed, setElapsed] = useState(0)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const timer = getRunningTimer()
-      setRunningTimer(timer)
-      if (timer) setElapsed(Math.round((Date.now() - new Date(timer.start_time).getTime()) / 60000))
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [])
+  const { runningTimer, startTimer, stopTimer } = useRunningTimer()
 
   const [newTitle, setNewTitle] = useState("")
   const [newDesc, setNewDesc] = useState("")
@@ -93,7 +65,7 @@ export function TasksView() {
   const [newProjectIdx, setNewProjectIdx] = useState(0)
   const [newStep, setNewStep] = useState(0)
 
-  const [editTask, setEditTask] = useState<Task | null>(null)
+  const [editTaskData, setEditTaskData] = useState<Task | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editDesc, setEditDesc] = useState("")
   const [editPriority, setEditPriority] = useState<Priority>("none")
@@ -114,8 +86,6 @@ export function TasksView() {
   const [subtaskIdx, setSubtaskIdx] = useState(0)
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
   const [addingSubtask, setAddingSubtask] = useState(false)
-
-  const subtaskCounts = getAllSubtaskCounts()
 
   const didConsume = useRef(false)
   useEffect(() => {
@@ -168,13 +138,13 @@ export function TasksView() {
         case "up": setSubtaskIdx((i) => Math.max(0, i - 1)); break
         case "down": setSubtaskIdx((i) => Math.min(subs.length - 1, i + 1)); break
         case "return":
-          if (subs[subtaskIdx]) { toggleSubtask(subs[subtaskIdx].id); bump() }
+          if (subs[subtaskIdx]) { toggleSubtask(subs[subtaskIdx].id) }
           break
         case "s":
           setNewSubtaskTitle(""); setAddingSubtask(true); setInputFocused(true)
           break
         case "x":
-          if (subs[subtaskIdx]) { deleteSubtask(subs[subtaskIdx].id); setSubtaskIdx(Math.max(0, subtaskIdx - 1)); bump() }
+          if (subs[subtaskIdx]) { deleteSubtask(subs[subtaskIdx].id); setSubtaskIdx(Math.max(0, subtaskIdx - 1)) }
           break
         case "escape": setView("list"); setDetailTask(null); break
       }
@@ -207,7 +177,7 @@ export function TasksView() {
         case "e":
           if (allTasks[selectedIndex]) {
             const t = allTasks[selectedIndex]
-            setEditTask(t); setEditTitle(t.title); setEditDesc(t.description)
+            setEditTaskData(t); setEditTitle(t.title); setEditDesc(t.description)
             setEditPriority(t.priority); setEditLabels(t.labels); setEditDue(t.due_date ?? "")
             setEditStep(0); setView("edit_task"); setInputFocused(true)
           }
@@ -215,20 +185,20 @@ export function TasksView() {
         case "k": setView("kanban"); setKanbanCol(0); setKanbanRow(0); break
         case "m": setView("manage_statuses"); setSelectedIndex(0); break
         case "x":
-          if (allTasks[selectedIndex]) { deleteTask(allTasks[selectedIndex].id); setSelectedIndex(Math.max(0, selectedIndex - 1)); bump() }
+          if (allTasks[selectedIndex]) { deleteTask(allTasks[selectedIndex].id); setSelectedIndex(Math.max(0, selectedIndex - 1)) }
           break
         case "right":
           if (allTasks[selectedIndex]) {
             const t = allTasks[selectedIndex]
             const curIdx = statuses.findIndex((s) => s.id === t.status_id)
-            if (curIdx < statuses.length - 1) { moveTask(t.id, statuses[curIdx + 1].id); bump() }
+            if (curIdx < statuses.length - 1) moveTask(t.id, statuses[curIdx + 1].id)
           }
           break
         case "left":
           if (allTasks[selectedIndex]) {
             const t = allTasks[selectedIndex]
             const curIdx = statuses.findIndex((s) => s.id === t.status_id)
-            if (curIdx > 0) { moveTask(t.id, statuses[curIdx - 1].id); bump() }
+            if (curIdx > 0) moveTask(t.id, statuses[curIdx - 1].id)
           }
           break
         case "p":
@@ -236,7 +206,7 @@ export function TasksView() {
             const t = allTasks[selectedIndex]
             const pIdx = PRIORITIES.indexOf(t.priority)
             const next = PRIORITIES[(pIdx + 1) % PRIORITIES.length]
-            updateTask(t.id, t.title, t.description, next, t.labels, t.due_date); bump()
+            updateTask(t.id, t.title, t.description, next, t.labels, t.due_date)
           }
           break
         case "f":
@@ -249,7 +219,7 @@ export function TasksView() {
           setSelectedIndex(0)
           break
         case "t":
-          if (runningTimer) { stopTimer(runningTimer.id); setRunningTimer(null) }
+          if (runningTimer) stopTimer()
           else if (allTasks[selectedIndex]) {
             setTimerDesc(allTasks[selectedIndex].title)
             setStartingTimer(true); setInputFocused(true)
@@ -257,11 +227,10 @@ export function TasksView() {
           break
         case "o": {
           const pomo = getPomodoroState()
-          if (pomo.phase !== "idle") {
-            stopPomodoro(); bump()
-          } else if (allTasks[selectedIndex]) {
+          if (pomo.phase !== "idle") stopPomodoro()
+          else if (allTasks[selectedIndex]) {
             const t = allTasks[selectedIndex]
-            startPomodoro(t.id, t.title); bump()
+            startPomodoro(t.id, t.title)
           }
           break
         }
@@ -281,16 +250,16 @@ export function TasksView() {
           break
         case "return":
         case ">":
-          if (colTasks[kanbanRow] && kanbanCol < statuses.length - 1) { moveTask(colTasks[kanbanRow].id, statuses[kanbanCol + 1].id); bump() }
+          if (colTasks[kanbanRow] && kanbanCol < statuses.length - 1) moveTask(colTasks[kanbanRow].id, statuses[kanbanCol + 1].id)
           break
         case "<":
-          if (colTasks[kanbanRow] && kanbanCol > 0) { moveTask(colTasks[kanbanRow].id, statuses[kanbanCol - 1].id); bump() }
+          if (colTasks[kanbanRow] && kanbanCol > 0) moveTask(colTasks[kanbanRow].id, statuses[kanbanCol - 1].id)
           break
         case "x":
-          if (colTasks[kanbanRow]) { deleteTask(colTasks[kanbanRow].id); setKanbanRow(Math.max(0, kanbanRow - 1)); bump() }
+          if (colTasks[kanbanRow]) { deleteTask(colTasks[kanbanRow].id); setKanbanRow(Math.max(0, kanbanRow - 1)) }
           break
         case "t":
-          if (runningTimer) { stopTimer(runningTimer.id); setRunningTimer(null) }
+          if (runningTimer) stopTimer()
           else if (colTasks[kanbanRow]) {
             setTimerDesc(colTasks[kanbanRow].title); setStartingTimer(true); setInputFocused(true)
           }
@@ -315,7 +284,7 @@ export function TasksView() {
           }
           break
         case "x":
-          if (statuses[selectedIndex]) { deleteTaskStatus(statuses[selectedIndex].id); setSelectedIndex(Math.max(0, selectedIndex - 1)); bump() }
+          if (statuses[selectedIndex]) { deleteTaskStatus(statuses[selectedIndex].id); setSelectedIndex(Math.max(0, selectedIndex - 1)) }
           break
         case "escape": setView("list"); break
       }
@@ -324,7 +293,7 @@ export function TasksView() {
     }
   })
 
-  // --- All rendering below (no hooks after this point) ---
+  // --- Rendering ---
 
   if (startingTimer) {
     const task = allTasks[selectedIndex]
@@ -345,331 +314,123 @@ export function TasksView() {
   }
 
   if (view === "new_status" || view === "edit_status") {
-    const isEdit = view === "edit_status"
-    if (statusStep === 1) {
-      return (
-        <box style={{ flexDirection: "column", gap: 1 }}>
-          <text fg="#7aa2f7"><strong>{isEdit ? "Edit" : "New"} Status</strong> — Color</text>
-          <box style={{ flexDirection: "row", flexWrap: "wrap", gap: 0 }}>
-            {COLOR_PALETTE.map((c, i) => (
-              <text key={c} fg={i === statusColorIdx ? "#ffffff" : c} bg={i === statusColorIdx ? c : undefined}>{" ● "}</text>
-            ))}
-          </box>
-          <text fg="#565f89">Selected: <span fg={COLOR_PALETTE[statusColorIdx]}>████ {COLOR_PALETTE[statusColorIdx]}</span></text>
-          <text fg="#414868">Left/Right to pick, Enter to confirm, ESC to cancel</text>
-          <input placeholder="" onSubmit={() => setStatusStep(2)} focused style={{ width: 1 }} />
-        </box>
-      )
-    }
-    if (statusStep === 2) {
-      return (
-        <box style={{ flexDirection: "column", gap: 1 }}>
-          <text fg="#7aa2f7"><strong>{isEdit ? "Edit" : "New"} Status</strong> — Progress Level</text>
-          {PROGRESS_LEVELS.map((level, i) => (
-            <text key={level} fg={i === statusProgressIdx ? "#7aa2f7" : "#565f89"}>
-              {i === statusProgressIdx ? "▸ " : "  "}{PROGRESS_ICONS[level]} {PROGRESS_LABELS[level]}
-            </text>
-          ))}
-          <text fg="#414868">Up/Down to pick, Enter to confirm, ESC to cancel</text>
-          <input placeholder="" onSubmit={() => {
-            if (isEdit && editingStatus) updateTaskStatus(editingStatus.id, statusName, COLOR_PALETTE[statusColorIdx], PROGRESS_LEVELS[statusProgressIdx])
-            else createTaskStatus(statusName, COLOR_PALETTE[statusColorIdx], PROGRESS_LEVELS[statusProgressIdx])
-            setView("manage_statuses"); setInputFocused(false)
-          }} focused style={{ width: 1 }} />
-        </box>
-      )
-    }
     return (
-      <box style={{ flexDirection: "column", gap: 1 }}>
-        <text fg="#7aa2f7"><strong>{isEdit ? "Edit" : "New"} Status</strong> — Name</text>
-        <box style={{ flexDirection: "row", gap: 1 }}>
-          <text fg="#565f89">Status Name:</text>
-          <input placeholder="e.g. In Review" value={statusName} onInput={setStatusName} onSubmit={() => {
-            if (statusName.trim()) setStatusStep(1)
-          }} focused style={{ width: 30 }} />
-        </box>
-        <text fg="#414868">Enter to continue, ESC to cancel</text>
-      </box>
+      <StatusWizard
+        isEdit={view === "edit_status"}
+        statusStep={statusStep}
+        statusName={statusName}
+        statusColorIdx={statusColorIdx}
+        statusProgressIdx={statusProgressIdx}
+        setStatusName={setStatusName}
+        onNameSubmit={() => { if (statusName.trim()) setStatusStep(1) }}
+        onColorSubmit={() => setStatusStep(2)}
+        onProgressSubmit={() => {
+          if (view === "edit_status" && editingStatus) {
+            updateTaskStatus(editingStatus.id, statusName, COLOR_PALETTE[statusColorIdx], PROGRESS_LEVELS[statusProgressIdx])
+          } else {
+            createTaskStatus(statusName, COLOR_PALETTE[statusColorIdx], PROGRESS_LEVELS[statusProgressIdx])
+          }
+          setView("manage_statuses"); setInputFocused(false)
+        }}
+      />
     )
   }
 
   if (view === "new_task") {
-    const textSteps = [
-      { label: "Task Title:", placeholder: "What needs to be done?", value: newTitle, setter: setNewTitle },
-      { label: "Description (optional):", placeholder: "", value: newDesc, setter: setNewDesc },
-    ]
-    const projectChoices = [{ name: "No Project" }, ...projects.map((p) => ({ name: p.name }))]
-
-    if (newStep < textSteps.length) {
-      const step = textSteps[newStep]
-      return (
-        <box style={{ flexDirection: "column", gap: 1 }}>
-          <text fg="#7aa2f7"><strong>New Task</strong> (Step {newStep + 1}/5)</text>
-          <box style={{ flexDirection: "row", gap: 1 }}>
-            <text fg="#565f89">{step.label}</text>
-            <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={() => setNewStep(newStep + 1)} focused style={{ width: 40 }} />
-          </box>
-          <text fg="#414868">Enter to continue, ESC to cancel</text>
-        </box>
-      )
-    }
-    if (newStep === 2) {
-      return (
-        <box style={{ flexDirection: "column", gap: 1 }}>
-          <text fg="#7aa2f7"><strong>New Task</strong> — Project (Step 3/5)</text>
-          {projectChoices.map((p, i) => (
-            <text key={i} fg={i === newProjectIdx ? "#7aa2f7" : "#565f89"}>
-              {i === newProjectIdx ? "▸ " : "  "}{p.name}
-            </text>
-          ))}
-          <text fg="#414868">Up/Down to pick, Enter to confirm</text>
-          <input placeholder="" onSubmit={() => setNewStep(3)} focused style={{ width: 1 }} />
-        </box>
-      )
-    }
-    if (newStep === 3) {
-      return (
-        <box style={{ flexDirection: "column", gap: 1 }}>
-          <text fg="#7aa2f7"><strong>New Task</strong> — Status (Step 4/5)</text>
-          {statuses.map((s, i) => (
-            <text key={s.id} fg={i === newStatusIdx ? "#7aa2f7" : "#565f89"}>
-              {i === newStatusIdx ? "▸ " : "  "}<span fg={s.color}>{PROGRESS_ICONS[s.progress]}</span> {s.name}
-            </text>
-          ))}
-          <text fg="#414868">Up/Down to pick, Enter to confirm</text>
-          <input placeholder="" onSubmit={() => setNewStep(4)} focused style={{ width: 1 }} />
-        </box>
-      )
-    }
-    if (newStep === 4) {
-      return (
-        <box style={{ flexDirection: "column", gap: 1 }}>
-          <text fg="#7aa2f7"><strong>New Task</strong> — Priority (Step 5/5)</text>
-          {PRIORITIES.map((p, i) => {
-            const pi = PRIORITY_ICONS[p]
-            return (
-              <text key={p} fg={PRIORITIES.indexOf(newPriority) === i ? "#7aa2f7" : "#565f89"}>
-                {PRIORITIES.indexOf(newPriority) === i ? "▸ " : "  "}<span fg={pi.color}>{pi.icon}</span>{p === "none" ? "No priority" : p.charAt(0).toUpperCase() + p.slice(1)}
-              </text>
-            )
-          })}
-          <text fg="#414868">Up/Down to pick, Enter to create</text>
-          <input placeholder="" onSubmit={() => {
+    return (
+      <NewTaskWizard
+        step={newStep}
+        title={newTitle}
+        desc={newDesc}
+        setTitle={setNewTitle}
+        setDesc={setNewDesc}
+        projects={projects}
+        statuses={statuses}
+        projectIdx={newProjectIdx}
+        statusIdx={newStatusIdx}
+        priority={newPriority}
+        onNext={() => {
+          if (newStep < 4) {
+            setNewStep(newStep + 1)
+          } else {
             const sid = statuses[newStatusIdx]?.id ?? statuses[0]?.id
             const projectIds = [null, ...projects.map((p) => p.id)]
             const pid = projectIds[newProjectIdx] ?? null
             if (sid) createTask(newTitle, sid, pid, newPriority, newDesc)
             setView("list"); setInputFocused(false)
-          }} focused style={{ width: 1 }} />
-        </box>
-      )
-    }
+          }
+        }}
+      />
+    )
   }
 
-  if (view === "edit_task" && editTask) {
-    const steps = [
-      { label: "Title:", placeholder: "", value: editTitle, setter: setEditTitle },
-      { label: "Description:", placeholder: "", value: editDesc, setter: setEditDesc },
-      { label: "Labels (comma-sep):", placeholder: "bug,feature", value: editLabels, setter: setEditLabels },
-      { label: "Due Date (YYYY-MM-DD):", placeholder: "", value: editDue, setter: setEditDue },
-    ]
-    const step = steps[editStep]
+  if (view === "edit_task" && editTaskData) {
     return (
-      <box style={{ flexDirection: "column", gap: 1 }}>
-        <text fg="#7aa2f7"><strong>Edit Task</strong> (Step {editStep + 1}/{steps.length})</text>
-        <box style={{ flexDirection: "row", gap: 1 }}>
-          <text fg="#565f89">{step.label}</text>
-          <input placeholder={step.placeholder} value={step.value} onInput={step.setter} onSubmit={() => {
-            if (editStep < steps.length - 1) setEditStep(editStep + 1)
-            else { updateTask(editTask.id, editTitle, editDesc, editPriority, editLabels, editDue || null); setView("list"); setInputFocused(false) }
-          }} focused style={{ width: 40 }} />
-        </box>
-        <text fg="#414868">Enter to continue, ESC to cancel</text>
-      </box>
+      <EditTaskWizard
+        task={editTaskData}
+        editTitle={editTitle}
+        editDesc={editDesc}
+        editLabels={editLabels}
+        editDue={editDue}
+        setEditTitle={setEditTitle}
+        setEditDesc={setEditDesc}
+        setEditLabels={setEditLabels}
+        setEditDue={setEditDue}
+        editStep={editStep}
+        onSubmit={() => {
+          if (editStep < 3) setEditStep(editStep + 1)
+          else {
+            updateTask(editTaskData.id, editTitle, editDesc, editPriority, editLabels, editDue || null)
+            setView("list"); setInputFocused(false)
+          }
+        }}
+      />
     )
   }
 
   if (view === "task_detail" && detailTask) {
-    const subs = getSubtasks(detailTask.id)
-    const status = statuses.find((s) => s.id === detailTask.status_id)
-    const project = detailTask.project_id ? projects.find((p) => p.id === detailTask.project_id) : null
-    const pi = PRIORITY_ICONS[detailTask.priority]
-    const completed = subs.filter((s) => s.is_completed).length
-
-    if (addingSubtask) {
-      return (
-        <box style={{ flexDirection: "column", gap: 1 }}>
-          <text fg="#7aa2f7"><strong>{detailTask.title}</strong> — Add Subtask</text>
-          <box style={{ flexDirection: "row", gap: 1 }}>
-            <text fg="#565f89">Subtask:</text>
-            <input placeholder="What needs to be done?" value={newSubtaskTitle} onInput={setNewSubtaskTitle} onSubmit={() => {
-              if (newSubtaskTitle.trim()) createSubtask(detailTask.id, newSubtaskTitle.trim())
-              setNewSubtaskTitle(""); setAddingSubtask(false); setInputFocused(false)
-            }} focused style={{ width: 40 }} />
-          </box>
-          <text fg="#414868">Enter to add, ESC to cancel</text>
-        </box>
-      )
-    }
-
     return (
-      <box style={{ flexDirection: "column", gap: 1 }}>
-        <box style={{ flexDirection: "row", gap: 1 }}>
-          {status && <text fg={status.color}>{PROGRESS_ICONS[status.progress]}</text>}
-          <text fg="#7aa2f7"><strong>{detailTask.title}</strong></text>
-          {detailTask.priority !== "none" && <text fg={pi.color}>{pi.icon}</text>}
-          {status && <text fg={status.color}>{status.name}</text>}
-        </box>
-        {detailTask.description && <text fg="#e2e8f0">{detailTask.description}</text>}
-        <box style={{ flexDirection: "row", gap: 2 }}>
-          {project && <text fg="#414868">Project: {project.name}</text>}
-          {detailTask.labels && <text fg="#414868">Labels: {detailTask.labels}</text>}
-          {detailTask.due_date && <text fg="#565f89">Due: {detailTask.due_date}</text>}
-        </box>
-
-        {(() => {
-          const pc = getTaskPomodoroCount(detailTask.id)
-          if (pc === 0) return null
-          return <text fg="#e94560">Pomodoros: {"#"}{pc}</text>
-        })()}
-
-        <box style={{ height: 1 }} />
-        <text fg="#bb9af7"><strong>Subtasks</strong> <span fg="#565f89">({completed}/{subs.length})</span></text>
-        <text fg="#565f89">[S] Add [Enter] Toggle [X] Delete [ESC] Back</text>
-
-        {subs.length === 0 ? (
-          <text fg="#414868">No subtasks yet — press S to add</text>
-        ) : (
-          <box style={{ flexDirection: "column", borderStyle: "single", borderColor: "#292e42", padding: 1 }}>
-            {subs.map((sub, idx) => (
-              <box key={sub.id} style={{ flexDirection: "row", gap: 1 }}>
-                <text fg={idx === subtaskIdx ? "#7aa2f7" : "#414868"}>{idx === subtaskIdx ? "▸" : " "}</text>
-                <text fg={sub.is_completed ? "#16c79a" : "#565f89"}>{sub.is_completed ? "✓" : "○"}</text>
-                <text fg={sub.is_completed ? "#414868" : "#e2e8f0"}>{sub.title}</text>
-              </box>
-            ))}
-          </box>
-        )}
-      </box>
+      <TaskDetailView
+        task={detailTask}
+        statuses={statuses}
+        projects={projects}
+        subtaskIdx={subtaskIdx}
+        addingSubtask={addingSubtask}
+        newSubtaskTitle={newSubtaskTitle}
+        setNewSubtaskTitle={setNewSubtaskTitle}
+        onAddSubtask={() => {
+          if (newSubtaskTitle.trim()) createSubtask(detailTask.id, newSubtaskTitle.trim())
+          setNewSubtaskTitle(""); setAddingSubtask(false); setInputFocused(false)
+        }}
+      />
     )
   }
 
   if (view === "manage_statuses") {
-    return (
-      <box style={{ flexDirection: "column", gap: 1 }}>
-        <text fg="#7aa2f7"><strong>Manage Task Statuses</strong></text>
-        <text fg="#565f89">[N] New [E] Edit [X] Delete [ESC] Back</text>
-        {statuses.length === 0 ? <EmptyState message="No statuses" hint="Press 'N' to create" /> : (
-          <scrollbox style={{ flexGrow: 1, borderStyle: "single", borderColor: "#292e42", padding: 1 }} viewportCulling>
-            {statuses.map((s, idx) => (
-              <box key={s.id} style={{ flexDirection: "row", gap: 1 }}>
-                <text fg={idx === selectedIndex ? "#7aa2f7" : "#565f89"}>{idx === selectedIndex ? "▸" : " "}</text>
-                <text fg={s.color}>{PROGRESS_ICONS[s.progress]}</text>
-                <text fg="#e2e8f0">{s.name}</text>
-                <text fg={s.color}>████</text>
-                <text fg="#414868">{PROGRESS_LABELS[s.progress]}</text>
-                <text fg="#565f89">({taskCounts.get(s.id) ?? 0} tasks)</text>
-              </box>
-            ))}
-          </scrollbox>
-        )}
-      </box>
-    )
+    return <StatusManager statuses={statuses} selectedIndex={selectedIndex} taskCounts={taskCounts} />
   }
 
   if (view === "kanban") {
     return (
-      <box style={{ flexDirection: "column", gap: 1 }}>
-        <box style={{ flexDirection: "row", gap: 1 }}>
-          <text fg="#7aa2f7"><strong>Kanban</strong></text>
-          {filterProjectId && <text fg="#bb9af7">[{projects.find((p) => p.id === filterProjectId)?.name}]</text>}
-          {runningTimer && <text fg="#f39c12">Timer: {formatDuration(elapsed)}</text>}
-        </box>
-        <text fg="#565f89">[L] List [N] New [T] Timer [{'>'}/Enter] Move right [{'<'}] Move left [X] Del</text>
-        <box style={{ flexDirection: "row", gap: 1, flexGrow: 1 }}>
-          {statuses.map((status, colIdx) => {
-            const colTasks = getTasksByStatus(status.id, filterProjectId ?? undefined)
-            const isActiveCol = colIdx === kanbanCol
-            return (
-              <box key={status.id} style={{ flexDirection: "column", flexGrow: 1, borderStyle: "single", borderColor: isActiveCol ? status.color : "#292e42", padding: 1 }}>
-                <box style={{ flexDirection: "row", gap: 1 }}>
-                  <text fg={status.color}>{PROGRESS_ICONS[status.progress]}</text>
-                  <text fg={isActiveCol ? status.color : "#565f89"}>{status.name}</text>
-                  <text fg="#414868">{colTasks.length}</text>
-                </box>
-                <scrollbox style={{ flexGrow: 1 }} viewportCulling>
-                  {colTasks.length === 0 ? <text fg="#292e42">empty</text> : colTasks.map((task, rowIdx) => {
-                    const isSelected = isActiveCol && rowIdx === kanbanRow
-                    const pi = PRIORITY_ICONS[task.priority]
-                    const proj = task.project_id ? projects.find((pp) => pp.id === task.project_id) : null
-                    return (
-                      <box key={task.id} style={{ flexDirection: "column", backgroundColor: isSelected ? "#292e42" : undefined, marginBottom: 1 }}>
-                        <box style={{ flexDirection: "row", gap: 1 }}>
-                          <text fg={isSelected ? "#7aa2f7" : "#414868"}>{isSelected ? "▸" : " "}</text>
-                          {task.priority !== "none" && <text fg={pi.color}>{pi.icon}</text>}
-                          <text fg={isSelected ? "#e2e8f0" : "#565f89"}>{task.title}</text>
-                          {(() => {
-                            const sc = subtaskCounts.get(task.id)
-                            if (!sc || sc.total === 0) return null
-                            return <text fg={sc.completed === sc.total ? "#16c79a" : "#bb9af7"}>[{sc.completed}/{sc.total}]</text>
-                          })()}
-                        </box>
-                        {proj && <text fg="#414868" style={{ paddingLeft: 3 }}>[{proj.name}]</text>}
-                      </box>
-                    )
-                  })}
-                </scrollbox>
-              </box>
-            )
-          })}
-        </box>
-      </box>
+      <KanbanBoard
+        statuses={statuses}
+        projects={projects}
+        kanbanCol={kanbanCol}
+        kanbanRow={kanbanRow}
+        filterProjectId={filterProjectId}
+        subtaskCounts={subtaskCounts}
+      />
     )
   }
 
-  // List view (default)
-  const filterLabel = filterProjectId ? projects.find((p) => p.id === filterProjectId)?.name ?? "All" : "All Projects"
   return (
-    <box style={{ flexDirection: "column", gap: 1 }}>
-      <box style={{ flexDirection: "row", gap: 1 }}>
-        <text fg="#7aa2f7"><strong>Tasks</strong></text>
-        <text fg="#bb9af7">[{filterLabel}]</text>
-        {runningTimer && <text fg="#f39c12">Timer: {formatDuration(elapsed)} ({runningTimer.description})</text>}
-      </box>
-      <text fg="#565f89">[N] New [Enter] Detail [E] Edit [S] Subtask [K] Kanban [M] Statuses [X] Del [P] Priority [F] Filter [T] Timer [O] Pomodoro</text>
-      {allTasks.length === 0 ? <EmptyState message="No tasks yet" hint="Press 'N' to create a task" /> : (
-        <scrollbox style={{ flexGrow: 1, borderStyle: "single", borderColor: "#292e42", padding: 1 }} viewportCulling>
-          {allTasks.map((task, idx) => {
-            const status = statuses.find((s) => s.id === task.status_id)
-            const project = task.project_id ? projects.find((p) => p.id === task.project_id) : null
-            const pi = PRIORITY_ICONS[task.priority]
-            const isDone = status?.progress === "full" || status?.progress === "cancelled"
-            return (
-              <box key={task.id} style={{ flexDirection: "row", gap: 1 }}>
-                <text fg={idx === selectedIndex ? "#7aa2f7" : "#414868"}>{idx === selectedIndex ? "▸" : " "}</text>
-                {status && <text fg={status.color}>{PROGRESS_ICONS[status.progress]}</text>}
-                {task.priority !== "none" && <text fg={pi.color}>{pi.icon}</text>}
-                <text fg={isDone ? "#414868" : "#e2e8f0"}>{isDone ? "✓ " : ""}{task.title}</text>
-                {(() => {
-                  const sc = subtaskCounts.get(task.id)
-                  if (!sc || sc.total === 0) return null
-                  const allDone = sc.completed === sc.total
-                  return <text fg={allDone ? "#16c79a" : "#bb9af7"}>[{sc.completed}/{sc.total}]</text>
-                })()}
-                {(() => {
-                  const pc = getTaskPomodoroCount(task.id)
-                  if (pc === 0) return null
-                  return <text fg="#e94560">{"#"}{pc}</text>
-                })()}
-                {status && <text fg={status.color}>{status.name}</text>}
-                {project && <text fg="#414868">[{project.name}]</text>}
-                {task.labels && <text fg="#414868">{task.labels}</text>}
-                {task.due_date && <text fg="#565f89">{task.due_date}</text>}
-              </box>
-            )
-          })}
-        </scrollbox>
-      )}
-    </box>
+    <TaskListView
+      tasks={allTasks}
+      statuses={statuses}
+      projects={projects}
+      selectedIndex={selectedIndex}
+      filterProjectId={filterProjectId}
+      subtaskCounts={subtaskCounts}
+    />
   )
 }

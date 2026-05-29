@@ -1,9 +1,9 @@
-let _focused = false
+import { useUIStore } from "../stores/useUIStore"
 
 export function setGlobalInputFocus(focused: boolean): void {
-  _focused = focused
+  useUIStore.getState().setInputFocused(focused)
 }
 
 export function isGlobalInputFocused(): boolean {
-  return _focused
+  return useUIStore.getState().inputFocused
 }

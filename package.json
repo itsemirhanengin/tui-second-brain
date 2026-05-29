@@ -12,7 +12,8 @@
     "@opentui-ui/toast": "latest",
     "@opentui/core": "latest",
     "@opentui/react": "latest",
-    "react": "^19.2.6"
+    "react": "^19.2.6",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/bun": "latest",
