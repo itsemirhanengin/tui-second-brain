@@ -33,9 +33,11 @@ Most productivity tools are web apps that demand your attention with notificatio
 ### Life Module
 
 - **Water Tracker** — Set daily goals, quick-add presets (250/330/500/750/1000ml), custom amounts, progress bar, 14-day history with bar charts, streak tracking
-- **Notes** — Full markdown editor with rendered preview, password protection (bcrypt), archive/unarchive, tagging, search, project linking
-- **Budget Management** — Multi-account support (bank, credit card, cash, savings, investment, e-wallet), income/expense/transfer transactions, category budgets with spending limits and over-limit alerts (`[+1,000 OVER]`)
-- **Liabilities** — Credit card debt tracking with configurable statement dates, auto-calculated due dates (10-day default for Turkey), minimum payment rates, loan tracking with installment progress bars, unified payment schedule with urgency color coding
+- **Notes** — Full markdown editor with rendered preview, password protection (bcrypt), archive/unarchive, tagging, search, checklist support (`- [ ]` / `- [x]`)
+- **Budget Management** — Multi-account support (bank, credit card, cash, savings, investment, e-wallet), income/expense/transfer transactions, category budgets with spending limits, month-over-month comparison, trend charts, recurring transaction auto-generation
+- **Liabilities** — Credit card debt tracking with configurable statement dates, auto-calculated due dates, minimum payment rates, loan tracking with installment progress bars, unified payment schedule with urgency color coding
+- **Habits** — Daily yes/no habit tracking, GitHub-style contribution heatmap (last 12 weeks), weekly/monthly completion percentages
+- **Goals** — Long-term goals with target dates, milestones, measurable progress tracking with progress bars
 
 ### Routines Module
 
@@ -50,11 +52,16 @@ Most productivity tools are web apps that demand your attention with notificatio
 - **Projects** — CRUD with status workflow (Active > Paused > Completed > Archived), client linking, deadline tracking with countdown
 - **Clients** — Contact info, hourly rates, project and task counts per client
 - **Time Tracker** — Real-time start/stop timer + manual time entry, project association, start timer directly from a task with `T`
-- **Work Overview** — Today/week hours, active projects, task status breakdown, running timer display
+- **Pomodoro Timer** — 25min work / 5min break cycles (configurable), per-task and per-day session counts, visual countdown in status bar, auto phase switching with terminal bell
+- **Work Overview** — Today/week hours, active projects, task status breakdown, running timer display, 7-day work hours bar chart
 
 ### Dashboard
 
-At-a-glance overview pulling data from all modules: water progress, routine completion, budget summary, upcoming payments, active projects, recent notes.
+At-a-glance overview pulling data from all modules: water progress, routine completion, budget summary, upcoming payments, active projects, recent notes, notifications for overdue items.
+
+### Command Palette
+
+Press `Ctrl+P` from anywhere for a fuzzy-searchable command palette. Navigate to any module, create new items, start timers, and access quick actions — all from one place. Recently used commands appear at the top.
 
 ### Settings & Theming
 
@@ -64,13 +71,14 @@ At-a-glance overview pulling data from all modules: water progress, routine comp
 
 ## Tech Stack
 
-| Layer       | Technology                                                                    |
-| ----------- | ----------------------------------------------------------------------------- |
-| Runtime     | [Bun](https://bun.sh)                                                         |
-| UI Core     | [OpenTUI](https://opentui.com) — native Zig TUI core with TypeScript bindings |
-| UI Bindings | `@opentui/react` — React 19 components for terminal                           |
-| Database    | `bun:sqlite` — built-in SQLite with WAL mode                                  |
-| Language    | TypeScript (strict mode)                                                      |
+| Layer            | Technology                                                                    |
+| ---------------- | ----------------------------------------------------------------------------- |
+| Runtime          | [Bun](https://bun.sh)                                                         |
+| UI Core          | [OpenTUI](https://opentui.com) — native Zig TUI core with TypeScript bindings |
+| UI Bindings      | `@opentui/react` — React 19 components for terminal                           |
+| State Management | [Zustand](https://github.com/pmndrs/zustand) — lightweight reactive stores    |
+| Database         | `bun:sqlite` — built-in SQLite with WAL mode                                  |
+| Language         | TypeScript (strict mode)                                                      |
 
 No external databases, no Docker, no servers. Everything runs locally in a single process.
 
@@ -108,6 +116,7 @@ The database is automatically created at `~/.tui-second-brain/brain.db` on first
 
 | Key                 | Action              |
 | ------------------- | ------------------- |
+| `Ctrl+P`            | Command palette     |
 | `⇧1` (`!`)          | Dashboard           |
 | `⇧2` (`@`)          | Life module         |
 | `⇧3` (`#`)          | Routines module     |
@@ -144,10 +153,21 @@ The database is automatically created at `~/.tui-second-brain/brain.db` on first
 | `K`              | Kanban view                        |
 | `L`              | List view                          |
 | `T`              | Start/Stop timer for selected task |
+| `O`              | Start/Stop Pomodoro                |
+| `S`              | Add subtask                        |
 | `P`              | Cycle priority                     |
 | `F`              | Filter by project                  |
 | `Left` / `Right` | Move task status                   |
 | `M`              | Manage statuses                    |
+
+### Time Tracker
+
+| Key | Action                |
+| --- | --------------------- |
+| `T` | Start/Stop timer      |
+| `O` | Start/Stop Pomodoro   |
+| `M` | Add manual time entry |
+| `X` | Delete selected entry |
 
 ### Notes
 
@@ -165,38 +185,63 @@ src/
 ├── db/
 │   ├── connection.ts                  # SQLite singleton (WAL mode)
 │   └── migrations.ts                  # Schema + seed data
+├── stores/                            # Zustand reactive state layer
+│   ├── useUIStore.ts                  # Global UI state (input focus, pending actions)
+│   ├── useTimerStore.ts               # Running timer state with 1s polling
+│   ├── useWorkStore.ts                # Projects, clients, time entries
+│   ├── useTaskStore.ts                # Tasks, statuses, subtasks
+│   ├── useRoutineStore.ts             # Routines and completion logs
+│   └── useBudgetStore.ts             # Accounts, categories, transactions
 ├── hooks/
 │   ├── useNavigation.ts               # Module/sub-module routing
-│   └── useTheme.ts                    # Theme accessor
+│   ├── useTheme.ts                    # Theme accessor
+│   ├── useRunningTimer.ts             # Timer polling hook (shared across views)
+│   ├── useListNavigation.ts           # Keyboard list navigation
+│   ├── useViewRouter.ts               # View state + prop sync
+│   └── useWizardForm.ts              # Multi-step form management
 ├── components/
+│   ├── command-palette/               # Ctrl+P command palette
 │   ├── layout/                        # Header, Sidebar, StatusBar, MainLayout
-│   └── shared/                        # ProgressBar, Badge, CurrencyDisplay, EmptyState
+│   └── shared/                        # WizardForm, StatsRow, SelectableList, etc.
 ├── modules/
 │   ├── dashboard/Dashboard.tsx        # Home overview
 │   ├── life/
 │   │   ├── water/                     # WaterTracker + waterStore
 │   │   ├── notes/                     # NotesList, NoteEditor, NoteViewer + notesStore
-│   │   ├── budget/                    # BudgetDashboard + budgetStore
+│   │   ├── budget/
+│   │   │   ├── BudgetDashboard.tsx    # Router for budget sub-views
+│   │   │   ├── views/                 # BudgetOverview, TransactionsList, etc.
+│   │   │   ├── budgetStore.ts         # Accounts, categories, transactions
+│   │   │   └── recurringStore.ts      # Recurring transaction rules
+│   │   ├── habits/                    # HabitsView + habitsStore
+│   │   ├── goals/                     # GoalsView + goalsStore
 │   │   └── liabilities/              # LiabilitiesOverview + liabilitiesStore
-│   ├── routines/                      # RoutinesView + routinesStore
+│   ├── routines/
+│   │   ├── RoutinesView.tsx           # Router for routine sub-views
+│   │   ├── views/                     # TodayRoutines, AllRoutines, RoutineDetail, Stats
+│   │   ├── wizards/                   # NewRoutineWizard
+│   │   └── routinesStore.ts           # Routine definitions + completion logs
 │   ├── work/
-│   │   ├── WorkView.tsx               # Projects, Clients, TimeTracker, Overview
-│   │   ├── TasksView.tsx              # List + Kanban views
-│   │   ├── workStore.ts               # Clients, Projects, TimeEntries
-│   │   └── taskStore.ts               # Tasks, TaskStatuses
+│   │   ├── WorkView.tsx               # Router for work sub-views
+│   │   ├── TasksView.tsx              # Router for task sub-views
+│   │   ├── views/                     # WorkDashboard, ProjectsList, KanbanBoard, etc.
+│   │   ├── wizards/                   # NewProjectWizard, NewTaskWizard, etc.
+│   │   ├── workStore.ts               # Clients, Projects, TimeEntries (SQLite)
+│   │   ├── taskStore.ts               # Tasks, TaskStatuses (SQLite)
+│   │   └── pomodoroStore.ts           # Pomodoro timer (in-memory + DB logs)
 │   └── settings/                      # SettingsView + settingsStore
 └── utils/
     ├── themes.ts                      # 6 theme definitions
     ├── currency.ts                    # Currency formatting
     ├── date.ts                        # Date helpers
+    ├── charts.ts                      # ASCII charts (bar, pie, heatmap)
     ├── crypto.ts                      # Password hashing (bcrypt)
-    ├── export.ts                      # JSON/CSV export
-    └── validators.ts                  # Input validation
+    └── export.ts                      # JSON/CSV export
 ```
 
 ## Database
 
-All data is stored in a single SQLite file at `~/.tui-second-brain/brain.db`. The schema includes 18 tables:
+All data is stored in a single SQLite file at `~/.tui-second-brain/brain.db`. The schema includes 20+ tables:
 
 | Table                          | Purpose                                 |
 | ------------------------------ | --------------------------------------- |
@@ -206,16 +251,20 @@ All data is stored in a single SQLite file at `~/.tui-second-brain/brain.db`. Th
 | `accounts`                     | Financial accounts (6 types)            |
 | `categories`                   | Income/expense categories with limits   |
 | `transactions`                 | Income, expense, transfer records       |
+| `recurring_transactions`       | Auto-generated recurring rules          |
 | `budgets`                      | Monthly category budget limits          |
 | `credit_card_debts`            | Credit card statement cycles            |
 | `loans`                        | Loan tracking with installments         |
 | `liability_payments`           | Payment history                         |
 | `routines`, `routine_logs`     | Routine definitions and completion logs |
+| `habits`, `habit_entries`      | Daily habit tracking                    |
+| `goals`, `milestones`          | Long-term goals with milestones         |
 | `clients`                      | Client contact info and rates           |
 | `projects`                     | Project management with status workflow |
 | `time_entries`                 | Timer and manual time tracking          |
 | `task_statuses`                | Customizable task statuses              |
-| `tasks`                        | Task management with priorities         |
+| `tasks`, `subtasks`            | Task management with subtask support    |
+| `pomodoro_logs`                | Completed pomodoro session history      |
 
 ## Data Portability
 
