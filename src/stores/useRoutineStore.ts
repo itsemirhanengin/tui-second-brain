@@ -34,8 +34,8 @@ interface RoutineState {
 }
 
 export const useRoutineStore = create<RoutineState>((set, get) => ({
-  todayRoutines: getTodayRoutinesWithStatus(),
-  allRoutines: getRoutines(false),
+  todayRoutines: [],
+  allRoutines: [],
 
   refresh: () => set({
     todayRoutines: getTodayRoutinesWithStatus(),

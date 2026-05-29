@@ -44,9 +44,9 @@ interface WorkState {
 }
 
 export const useWorkStore = create<WorkState>((set, get) => ({
-  projects: getProjects(),
-  clients: getClients(false),
-  timeEntries: getTimeEntries(undefined, 30),
+  projects: [],
+  clients: [],
+  timeEntries: [],
 
   refresh: () => set({
     projects: getProjects(),

@@ -5,6 +5,7 @@ export function useRunningTimer() {
   const { runningTimer, elapsed, refresh, start, stop } = useTimerStore()
 
   useEffect(() => {
+    refresh()
     const interval = setInterval(refresh, 1000)
     return () => clearInterval(interval)
   }, [])

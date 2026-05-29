@@ -16,7 +16,7 @@ interface TimerState {
 }
 
 export const useTimerStore = create<TimerState>((set, get) => ({
-  runningTimer: getRunningTimer(),
+  runningTimer: null,
   elapsed: 0,
 
   refresh: () => {

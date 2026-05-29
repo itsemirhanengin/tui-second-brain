@@ -49,10 +49,10 @@ interface BudgetState {
 }
 
 export const useBudgetStore = create<BudgetState>((set, get) => ({
-  accounts: getAccounts(),
-  categories: getCategories(),
-  transactions: getTransactions(),
-  recurringTransactions: getRecurringTransactions(),
+  accounts: [],
+  categories: [],
+  transactions: [],
+  recurringTransactions: [],
 
   refresh: () => set({
     accounts: getAccounts(),

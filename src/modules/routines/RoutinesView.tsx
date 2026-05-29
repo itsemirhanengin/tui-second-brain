@@ -24,9 +24,14 @@ export function RoutinesView({ subView }: { subView: "list" | "stats" }) {
   const { todayRoutines, allRoutines, refresh, removeRoutine, toggleActive, log } = useRoutineStore()
 
   useEffect(() => {
+    refresh()
+  }, [])
+
+  useEffect(() => {
     setView(propView)
     setSelectedIndex(0)
     setInputFocused(false)
+    refresh()
   }, [propView])
 
   const didConsume = useRef(false)

@@ -20,13 +20,16 @@ export function WizardForm({ title, steps, currentStep, onSubmit, hint }: Wizard
   return (
     <box style={{ flexDirection: "column", gap: 1 }}>
       <text fg="#7aa2f7"><strong>{title}</strong> (Step {currentStep + 1}/{steps.length})</text>
-      <box style={{ flexDirection: "row", gap: 1 }}>
+      <box key={currentStep} style={{ flexDirection: "row", gap: 1 }}>
         <text fg="#565f89">{step.label}</text>
         <input
           placeholder={step.placeholder}
           value={step.value}
           onInput={step.onInput}
-          onSubmit={onSubmit}
+          onSubmit={((val: string) => {
+            step.onInput(val)
+            onSubmit()
+          }) as any}
           focused
           style={{ width: 40 }}
         />

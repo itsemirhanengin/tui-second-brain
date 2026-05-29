@@ -30,10 +30,11 @@ export function NewClientWizard({ onComplete }: NewClientWizardProps) {
       steps={steps}
       currentStep={step}
       onSubmit={() => {
+        if (step === 0 && !name.trim()) return
         if (step < steps.length - 1) {
           setStep(step + 1)
         } else {
-          addClient(name, email, "", company, "", Number(rate) || 0)
+          addClient(name.trim(), email, "", company, "", Number(rate) || 0)
           onComplete()
         }
       }}

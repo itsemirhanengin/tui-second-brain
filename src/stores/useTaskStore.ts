@@ -45,9 +45,9 @@ interface TaskState {
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
-  statuses: getTaskStatuses(),
-  tasks: getTasks(),
-  subtaskCounts: getAllSubtaskCounts(),
+  statuses: [],
+  tasks: [],
+  subtaskCounts: new Map(),
 
   refresh: (filterProjectId) => set({
     statuses: getTaskStatuses(),

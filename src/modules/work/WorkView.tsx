@@ -27,13 +27,19 @@ export function WorkView({ subView }: { subView: string }) {
   const [activeProject, setActiveProject] = useState<Project | null>(null)
   const [timerDesc, setTimerDesc] = useState("")
 
-  const { projects, clients, timeEntries, removeProject, removeClient, removeTimeEntry } = useWorkStore()
+  const workStore = useWorkStore()
+  const { projects, clients, timeEntries, removeProject, removeClient, removeTimeEntry, refresh } = workStore
   const { runningTimer, stopTimer, startTimer } = useRunningTimer()
+
+  useEffect(() => {
+    refresh()
+  }, [])
 
   useEffect(() => {
     setView(propView)
     setSelectedIndex(0)
     setInputFocused(false)
+    refresh()
   }, [propView])
 
   const didConsume = useRef(false)
